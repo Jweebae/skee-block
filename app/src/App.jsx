@@ -57,7 +57,7 @@ export default function App() {
   useEffect(() => {
     // Coming back from Google: open the account dialog when there is something to finish or to explain.
     if (isAdmin || autoOpened.current) return
-    const returned = client.returnedFromGoogle && client.ready && client.user && (!client.profileComplete || client.canChangePassword)
+    const returned = client.returnedFromGoogle && client.ready && client.user && (!client.profileComplete || client.choosingPassword)
     if (!client.error && !returned) return
     const frame = requestAnimationFrame(() => {
       if (!dialogRef.current || dialogRef.current.open) return
@@ -66,7 +66,7 @@ export default function App() {
       dialogRef.current.showModal()
     })
     return () => cancelAnimationFrame(frame)
-  }, [client.error, client.ready, client.user, client.profileComplete, client.canChangePassword, client.returnedFromGoogle, isAdmin])
+  }, [client.error, client.ready, client.user, client.profileComplete, client.choosingPassword, client.returnedFromGoogle, isAdmin])
 
   function handleAction(event) {
     const trigger = event.target.closest('[data-action]')

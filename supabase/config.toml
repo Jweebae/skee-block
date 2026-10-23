@@ -1,0 +1,5 @@
+# Supabase project: skee-block (ref jfojdzzafbosqneervtn).
+# Deliberately minimal: the GitHub integration uses this folder for database migrations (supabase/migrations).
+# Authentication settings (providers, sign-ups, email templates, SMTP, redirect URLs) are managed in the
+# Supabase dashboard, not from this file.
+project_id = "jfojdzzafbosqneervtn"

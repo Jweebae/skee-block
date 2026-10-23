@@ -2,8 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 
 export const MIN_PASSWORD = 10
-const REAUTH_KEY = 'skee.client-reauth' // non-secret marker: the client asked to change their password and is re-confirming with Google
-const FRESH_MS = 10 * 60 * 1000
+const RESET_KEY = 'skee.client-reset' // non-secret marker: the client proved they own their email and is now choosing a new password
 // Read at load, before supabase-js tidies the address after a Google return.
 const RETURNED_FROM_GOOGLE = /[#&?](access_token|code)=/.test(window.location.hash + window.location.search)
 
@@ -20,24 +19,14 @@ function takeAuthError() {
   window.history.replaceState(null, '', window.location.pathname)
   return ERROR_TEXT[code] || 'Sign-in with Google did not complete. Please try again.'
 }
-
 const RETURNED_ERROR = takeAuthError()
 
-function storedIntent() {
-  try { return sessionStorage.getItem(REAUTH_KEY) === 'password' } catch { return false }
+function storedReset() {
+  try { return sessionStorage.getItem(RESET_KEY) === '1' } catch { return false }
 }
 
-function storeIntent(on) {
-  try { if (on) sessionStorage.setItem(REAUTH_KEY, 'password'); else sessionStorage.removeItem(REAUTH_KEY) } catch { /* the marker is optional */ }
-}
-
-// True when the session's own sign-in record shows a Google login within the last few minutes.
-function hasFreshGoogleLogin(session) {
-  try {
-    const payload = JSON.parse(atob(session.access_token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')))
-    const times = (payload.amr || []).filter(item => item.method === 'oauth').map(item => item.timestamp * 1000)
-    return times.length > 0 && Date.now() - Math.max(...times) < FRESH_MS
-  } catch { return false }
+function storeReset(on) {
+  try { if (on) sessionStorage.setItem(RESET_KEY, '1'); else sessionStorage.removeItem(RESET_KEY) } catch { /* the marker is optional */ }
 }
 
 function checkPassword(password, confirm) {
@@ -54,42 +43,52 @@ function cleanName(value, label) {
 // Client (customer) accounts. Separate from the owner login in useOwnerAuth, which also checks studio_admins.
 export default function useClientSession() {
   const [session, setSession] = useState(null)
-  const [googleFresh, setGoogleFresh] = useState(false)
   const [ready, setReady] = useState(!supabase)
   const [error, setError] = useState(RETURNED_ERROR)
   const [notice, setNotice] = useState('')
-  const [passwordIntent, setPasswordIntent] = useState(storedIntent)
+  const [resetting, setResetting] = useState(storedReset)
   useEffect(() => {
     if (!supabase) return
     let active = true
     supabase.auth.getSession().then(({ data }) => {
       if (!active) return
-      setSession(data.session ?? null); setGoogleFresh(Boolean(data.session) && hasFreshGoogleLogin(data.session)); setReady(true)
+      setSession(data.session ?? null); setReady(true)
     })
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, next) => {
-      setSession(next ?? null); setGoogleFresh(Boolean(next) && hasFreshGoogleLogin(next))
-    })
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, next) => setSession(next ?? null))
     return () => { active = false; subscription.unsubscribe() }
   }, [])
 
   const user = session?.user ?? null
   const profileComplete = user?.user_metadata?.profile_complete === true
-  // A password change needs a Google login from the last few minutes, after the client asked for it.
-  const canChangePassword = Boolean(user) && passwordIntent && googleFresh
+  // True right after a forgotten-password check (Google or emailed code): the next step is a new password.
+  const choosingPassword = Boolean(user) && resetting
 
-  async function startGoogle({ verify = false } = {}) {
+  // reset = the client forgot their password: Google must ask for their login again, which proves they own the account.
+  async function startGoogle({ reset = false } = {}) {
     setError(''); setNotice('')
-    storeIntent(verify); setPasswordIntent(verify)
+    storeReset(reset); setResetting(reset)
     const { error: problem } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}${window.location.pathname}`, queryParams: verify ? { prompt: 'login' } : undefined },
+      options: { redirectTo: `${window.location.origin}${window.location.pathname}`, queryParams: reset ? { prompt: 'login' } : undefined },
     })
-    if (problem) { storeIntent(false); setPasswordIntent(false); setError('Could not start Google sign-in. Please try again.') }
+    if (problem) { storeReset(false); setResetting(false); setError('Could not start Google sign-in. Please try again.') }
   }
   async function signInWithPassword(email, password) {
     setError(''); setNotice('')
     const { error: problem } = await supabase.auth.signInWithPassword({ email: String(email).trim(), password })
-    if (problem) throw new Error('Could not sign in. Check your email and password, or use Google.')
+    if (problem) throw new Error('Wrong email or password.')
+  }
+  // Emails a 6-digit code to an existing account. Failures other than "too many requests" look like success on
+  // purpose, so nobody can find out which email addresses have accounts.
+  async function sendCode(email) {
+    setError(''); setNotice('')
+    const { error: problem } = await supabase.auth.signInWithOtp({ email: String(email).trim(), options: { shouldCreateUser: false } })
+    if (problem?.status === 429) throw new Error('Too many requests. Please wait a minute, or confirm with Google instead.')
+  }
+  async function verifyCode(email, code) {
+    const { error: problem } = await supabase.auth.verifyOtp({ email: String(email).trim(), token: String(code).replace(/\s/g, ''), type: 'email' })
+    if (problem) throw new Error('That code is not right or has expired. Ask for a new one, or confirm with Google instead.')
+    storeReset(true); setResetting(true)
   }
   async function completeProfile({ firstName, lastName, password, confirm }) {
     const first = cleanName(firstName, 'first name'), last = cleanName(lastName, 'last name')
@@ -100,26 +99,22 @@ export default function useClientSession() {
     setNotice('Your account is ready.')
   }
   async function changePassword({ password, confirm }) {
-    if (!canChangePassword || !hasFreshGoogleLogin(session)) {
-      storeIntent(false); setPasswordIntent(false)
-      throw new Error('For your security, confirm with Google again before changing your password.')
-    }
     checkPassword(password, confirm)
     const { error: problem } = await supabase.auth.updateUser({ password })
     if (problem) throw new Error('The password could not be changed. Choose a different password, or try again in a moment.')
-    storeIntent(false); setPasswordIntent(false)
+    storeReset(false); setResetting(false)
     setNotice('Your password has been updated.')
   }
-  function cancelPasswordChange() { storeIntent(false); setPasswordIntent(false) }
+  function cancelPasswordChange() { storeReset(false); setResetting(false) }
   async function signOut() {
     setError(''); setNotice('')
-    storeIntent(false); setPasswordIntent(false)
+    storeReset(false); setResetting(false)
     const { error: problem } = await supabase.auth.signOut()
     if (problem) setError('Sign-out failed. Please try again.')
   }
   return {
-    available: Boolean(supabase), ready, user, profileComplete, canChangePassword, error, notice,
+    available: Boolean(supabase), ready, user, profileComplete, choosingPassword, error, notice,
     returnedFromGoogle: RETURNED_FROM_GOOGLE,
-    startGoogle, signInWithPassword, completeProfile, changePassword, cancelPasswordChange, signOut,
+    startGoogle, signInWithPassword, sendCode, verifyCode, completeProfile, changePassword, cancelPasswordChange, signOut,
   }
 }
