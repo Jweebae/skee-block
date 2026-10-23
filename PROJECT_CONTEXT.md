@@ -325,6 +325,15 @@ All four tiles show approved photos. The user first had the two Higgsfield tiles
 - Visibility note: the bottom-right corners are nearly black, so a black mark is almost invisible at the size the site shows (about 215–310 px per tile). Keep it white unless the user explicitly asks for black again, and then tell them it will be hard to see.
 - No hosting exists yet, so "published" means present in the local app only.
 
+### High-resolution update — 2026-10-23 (supersedes the 960×1200 / quality 88 numbers above)
+
+The user asked for high-resolution images on the site, in the latest version with the logo. `photo-edits/make-gallery-webp.sh` now (default colour white) builds each gallery image at its FULL native resolution, with the logo scaled by the same fractions of the photo (width 165/960, right margin 19/960, bottom margin 24/1200 of the drawn box):
+
+- `app/src/assets/gallery/*.webp`: what the site serves, WebP quality 90. Sizes: curtain and curly 1792×2240 (Higgsfield edits), swept and textured 1122×1402 (ChatGPT edits, which are the lower-resolution ones; they were not upscaled). All are 4:5, so the 960×1200 `width`/`height` attributes in `App.jsx` still give the right aspect ratio.
+- `photo-edits/final/*.png`: lossless watermarked masters (about 2.5–7 MB each), committed to GitHub as the high-resolution backup. The clean, unwatermarked originals (`photo-edits/source/`, `photo-edits/enhanced/`) stay on the owner's Mac only and are git-ignored, so the repository holds only logo-marked versions. The script needs `enhanced/` to run, so rebuilding is only possible on this Mac.
+- Logo input now comes from `brand/visual identity/White 3KEE Graffiti Logo.png` (byte-identical to the approved original in `../visual identity/`), so the script no longer reaches outside the project folder.
+- Option not taken: the two ChatGPT photos could be upscaled (for example with Higgsfield upscale) for more detail; this costs credits and changes approved photos, so it needs the user's approval first.
+
 ### Higgsfield edits — approved by the user
 
 - Made by Claude Code on the user's request. Model GPT Image 2.5 (variant flare), quality high, 2k, 4:5 → 1792×2240 PNG. 2.75 credits each (5.5 total; balance 40.4 afterwards). Job IDs: IMG_4120 `06d1aa37-e977-417f-9061-84eb181f06b2`, IMG_3665 `b4852b1b-bf5d-4190-a051-e7d7b59c645f`.
@@ -426,7 +435,14 @@ delete from auth.users where email like 'tmp-%-test@example.invalid';
 
 - Public visitors briefly see the browser-cached or sample menu before the shared settings load.
 - Bookings, clients, reviews and reminders are still not in the database; only owner access and the studio settings are.
-- GitHub: connected later on 2026-10-23. Claude installed the official GitHub CLI v2.103.0 (checksum verified) at `~/.local/bin/gh` (not on PATH; call it by full path) and the user approved the browser sign-in: logged in as `Jweebae`, HTTPS git protocol, token scopes `repo`, `read:org`, `gist`, stored in the macOS keyring (never in project files). That account's existing repos are `nexora-order-page` and `healers`; no Skee repository exists yet and the project folder is still not a git repository. Pending the user's answers: repository name and visibility (private recommended, the project holds client photos). Before the first commit: confirm `.gitignore` covers `.env*` (it does, except `.env.example`), `node_modules`, `dist`, and decide whether the large originals (HEIC/PNG in `photo-edits/source`, `enhanced`, `review`) belong in the repository.
+- GitHub: connected later on 2026-10-23. Claude installed the official GitHub CLI v2.103.0 (checksum verified) at `~/.local/bin/gh` (not on PATH; call it by full path) and the user approved the browser sign-in: logged in as `Jweebae`, HTTPS git protocol, token scopes `repo`, `read:org`, `gist`, stored in the macOS keyring (never in project files). That account's existing repos are `nexora-order-page` and `healers`; no Skee repository exists yet and the project folder is still not a git repository. (Resolved the same day: the user chose a private repository and left the name to Claude; see "GitHub repository milestone" below.) Checks done before the first commit: confirm `.gitignore` covers `.env*` (it does, except `.env.example`), `node_modules`, `dist`, and decide whether the large originals (HEIC/PNG in `photo-edits/source`, `enhanced`, `review`) belong in the repository.
+
+## GitHub repository milestone — 2026-10-23 (Claude Code)
+
+- Repository: https://github.com/Jweebae/skee-block (PRIVATE, default branch `main`). The git repository root is this `website project` folder (not the outer "skee barber shop " folder). First commit `522e667` pushed with 59 files (about 38 MB): `app/`, `brand/`, `docs/`, `photo-edits/` (script, notes, comparison page, `final/` masters), `AGENTS.md`, `PROJECT_CONTEXT.md`, `.gitignore`.
+- Not in the repository (by `.gitignore`): `.env*` except `app/.env.example` (so `app/.env.local` with the Supabase URL and publishable key exists only on this Mac), `node_modules/`, `dist/`, `photo-edits/source/`, `photo-edits/enhanced/`, and review images. A fresh clone therefore needs `npm install` and its own `app/.env.local` (copy `.env.example`, fill the two values from the Supabase project `jfojdzzafbosqneervtn`).
+- Commits use the local repository identity `Jweebae <337940131+Jweebae@users.noreply.github.com>` (GitHub's private no-reply address; nothing set globally). Pushing works through the GitHub CLI credential helper (`~/.local/bin/gh`, logged in as `Jweebae`).
+- Publishing: a private repository does not block publishing the site. GitHub Pages on a private repository needs a paid GitHub plan (to be verified for this account), so for the zero-budget goal use a free static host that deploys from private repositories (Cloudflare Pages, Netlify or Vercel) or make the repository public later (that would expose the code, database notes and photo masters). The build is `npm run build` in `app/` (output `app/dist`); the host must set `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`, and the production address must be added in Supabase Authentication → URL Configuration. No host has been chosen or configured, so nothing is published yet.
 
 ## Working continuity
 
