@@ -31,8 +31,9 @@ jobs:
       - run: npm run lint
       - run: npm run build
         env:
-          # The site is served from https://<owner>.github.io/skee-block/
-          VITE_BASE: /skee-block/
+          # Served from https://<owner>.github.io/skee-block/ by default. Once a custom domain such as 3kee.site
+          # points here, set the repository variable SITE_BASE to / (the site then lives at the domain root).
+          VITE_BASE: ${{ vars.SITE_BASE || '/skee-block/' }}
           # Browser-safe project values (public by design), stored as repository variables, not secrets.
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
