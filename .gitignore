@@ -1,0 +1,17 @@
+.DS_Store
+
+# Local secrets and configuration (only .env.example is tracked)
+.env
+.env.*
+!.env.example
+
+# Dependencies and build output
+node_modules/
+dist/
+
+# Clean, unwatermarked photo originals and their working conversions stay on the owner's Mac only.
+# The watermarked high-resolution masters live in photo-edits/final/.
+photo-edits/source/
+photo-edits/enhanced/
+photo-edits/review/*.png
+photo-edits/review/*.jpg

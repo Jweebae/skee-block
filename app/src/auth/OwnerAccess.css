@@ -1,0 +1,11 @@
+.owner-access{min-height:100dvh;background:#0B0B0B;color:#F2EFE9;padding:32px 20px 64px;font-family:'Inter Tight',sans-serif}
+.owner-logo{display:flex;align-items:center;gap:20px;max-width:1000px;margin:0 auto 48px;text-decoration:none;color:inherit}
+.owner-logo img{width:62px}.owner-logo span{font-size:11px;letter-spacing:.2em;text-transform:uppercase;border-left:1px solid #333;padding-left:20px}
+.owner-card{box-sizing:border-box;max-width:480px;margin:auto;padding:36px;border:1px solid #262626;background:#131313;border-radius:2px}
+.owner-card h1{font-size:46px;line-height:1.1;font-weight:400;margin:16px 0 24px}.owner-card p{font-size:15px;line-height:1.6;color:#BDB8B0}
+.owner-card fieldset{border:0;padding:0;margin:0;min-width:0;display:flex;flex-direction:column;gap:20px}
+.owner-card label{display:flex;flex-direction:column;gap:10px;color:#A8A49D;font-size:13px}
+.owner-card input{box-sizing:border-box;width:100%;background:#0B0B0B;color:#F2EFE9;border:1px solid #333;border-radius:2px;min-height:48px;padding:12px;font:16px 'Inter Tight',sans-serif}
+.owner-card input:focus-visible{outline:1px solid #C9A96A;outline-offset:2px}.owner-reset{font-size:13px;text-decoration:underline;text-underline-offset:4px;color:#BDB8B0}.owner-home{display:block;margin-top:28px;font-size:13px;color:#A8A49D}
+.owner-card :disabled{opacity:.5;cursor:wait}.owner-card .lbl{font-size:10px;line-height:1.6}
+@media(max-width:480px){.owner-card{padding:26px 22px}.owner-card h1{font-size:38px}}
