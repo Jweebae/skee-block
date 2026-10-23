@@ -156,7 +156,7 @@ As of 2026-10-23, the existing homepage and four-step booking preview are publis
 
 1. Preserve and maintain accurate memory across sessions.
 2. Keep the live website aligned with the approved visual identity.
-3. Authorize this chat’s Supabase connector for the existing Skee Block organization, then verify owner access and the saved settings. Retain editable sample details.
+3. Supabase access is restored and owner membership verified. Replace the invalid empty shared test settings with the existing approved sample settings, then verify owner saving and public loading. Retain editable sample details.
 4. Follow the recorded next feature order: privacy notice, then client profiles.
 5. Add real booking requests, owner approval, conflict-safe reservations and business automation.
 
@@ -165,12 +165,12 @@ As of 2026-10-23, the existing homepage and four-step booking preview are publis
 - The app has a homepage and interactive booking UI preview, not a production SaaS booking system.
 - Desktop visual styles are directly ported; phone layout uses the approved mobile home board. The mobile concept does not specify every lower-page section, so those use a responsive adaptation of the desktop design. Final user visual review remains pending.
 - Supabase owner access, settings and client auth are connected in the app; actual booking persistence is not.
-- ChatGPT’s Supabase connector currently only exposes Nexora. Skee Block authorization must be renewed before inspecting or modifying its database; do not create a duplicate project.
+- ChatGPT’s Supabase access was restored on 2026-10-23. The existing Skee project is healthy; its shared settings row still contains an invalid empty test payload (zero working days), so the app falls back to cached/sample settings.
 - The project still requires implementation of the actual end-to-end barber workflow.
 
 ## Exact next recommended development step
 
-First restore this chat’s Supabase access to the existing Skee Block organization and verify the existing owner/settings state. Do not recreate the project or replace Claude’s completed auth work. Then continue the recorded feature order: privacy notice, client profiles, and later real booking requests with owner approval, conflict-safe reservations and server-authoritative pricing. Keep private location behind real confirmation.
+Restore the existing sample settings as the shared settings: the current main row has zero cuts, add-ons and working days and fails app validation. Verify an owner save and public loading. Supabase access and owner membership are now confirmed; do not recreate the project or replace completed auth work. Then continue the recorded feature order: privacy notice, client profiles, and later real booking requests with owner approval, conflict-safe reservations and server-authoritative pricing. Keep private location behind real confirmation.
 
 ## Open business inputs and reference conflicts
 
@@ -527,6 +527,14 @@ The user confirmed Google sign-in worked and asked for a proper sign-up (first/l
 - This chat’s Supabase `list_organizations`/`list_projects` still return only Nexora. Reading organization `ffxtckjdcoyaxkgpisco` returned “You do not have permission to perform this action”. Asked the user to reconnect the plugin with Skee Block included. No database changes or owner-role changes were attempted during this reconciliation. The supplied owner email is not stored in this public repository.
 - Fresh `npm run build` and `npm run lint` pass. Build has a non-blocking JavaScript chunk-size warning (about 517 kB before gzip). No new browser or authenticated database verification was performed in this checkpoint.
 - Only project documentation changed. Outstanding database condition from Claude’s notes (invalid test settings payload and locked test accounts) remains unverified in this chat; inspect after authorization instead of assuming it is still present or already resolved.
+
+## Supabase access restored and existing state verified — 2026-10-23
+
+- After the user authorized ChatGPT for Skee Block, the connector exposes separate connections for Skee Block and Nexora. Use the connection whose project listing contains `jfojdzzafbosqneervtn`; do not use Nexora for this website.
+- Live read-only verification: `skee-block` is ACTIVE_HEALTHY in the separate Skee Block organization. Both public tables have RLS enabled. The owner membership table permits users to read their own row and denies client writes; settings have public read and owner-only insert/update policies.
+- Two active owner accounts exist; the account specified by the user is already an owner. No emails, user IDs, passwords or connection identifiers are recorded here. No roles were changed and no sign-in was performed.
+- Confirmed the unresolved test payload in `studio_settings`: singleton `main`, version 2, zero cuts, zero add-ons, zero working days. App validation requires seven weekly entries, so this payload is rejected and the cached/sample menu is used. No settings were overwritten during this connection check. Restore the existing samples and verify online saving before the next feature milestone.
+- Security advisor reports one warning: leaked-password protection is disabled. Reference: https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection . No security settings changed.
 
 ## Working continuity
 
