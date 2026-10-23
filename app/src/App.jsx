@@ -9,6 +9,7 @@ import BookingFlow from './booking/BookingFlow'
 import { BASE_CUT_PRICE } from './booking/catalog'
 import useStudioSettings from './settings/useStudioSettings'
 import AdminGate from './admin/AdminGate'
+import useClientSession from './auth/useClientSession'
 
 
 function ChatIcon() {
@@ -19,6 +20,8 @@ function ChatIcon() {
 // Bracketed content deliberately preserves the reference's unconfirmed details.
 export default function App() {
   const { settings, error: storageError, saveSettings } = useStudioSettings()
+  const client = useClientSession()
+  const clientName = client.user?.user_metadata?.full_name || client.user?.user_metadata?.name || client.user?.email || ''
   const [isAdmin, setIsAdmin] = useState(() => window.location.hash === '#admin')
   const visibleServices = settings.services.filter(item => item.visible)
   const openDays = settings.hours.filter(item => item.open)
@@ -49,6 +52,13 @@ export default function App() {
     bookingDialogRef.current.showModal()
     return () => { document.body.style.overflow = previousOverflow }
   }, [bookingRequest, isAdmin])
+
+  useEffect(() => {
+    // Returning from Google with a problem: open the account dialog so the visitor sees what happened.
+    if (!client.error || isAdmin || !dialogRef.current || dialogRef.current.open) return
+    setAction('account')
+    dialogRef.current.showModal()
+  }, [client.error, isAdmin])
 
   function handleAction(event) {
     const trigger = event.target.closest('[data-action]')
@@ -95,7 +105,7 @@ export default function App() {
           </nav>
           <div className="desktop-actions header-actions">
             <button className="btn btn-ghost button-sign-in" data-action="account" type="button">
-              Sign in
+              {client.user ? 'Account' : 'Sign in'}
             </button>
             <button className="btn btn-bone button-book" data-action="booking" type="button">
               Book
@@ -681,7 +691,11 @@ export default function App() {
         <button className="dialog-close" aria-label="Close" onClick={() => dialogRef.current.close()}>×</button>
         <span className="lbl">Skee Block · By appointment</span>
         <h2 id="dialog-title" className="serif">{action === 'account' ? 'Your place at the Block.' : 'Talk to Skee.'}</h2>
-        <p>{action === 'account' ? 'Client accounts are coming soon. Contact Skee for help with your appointment or review.' : 'The studio’s WhatsApp number will be added before launch. For now, reach Skee on Instagram.'}</p>
+        <p>{action !== 'account' ? 'The studio’s WhatsApp number will be added before launch. For now, reach Skee on Instagram.' : !client.available ? 'Client accounts are coming soon. Contact Skee for help with your appointment or review.' : client.user ? `Signed in as ${clientName}. Booking history and saved preferences are coming soon; bookings are not connected yet.` : 'Sign in or create your Skee Block account with Google. Booking history and saved preferences are coming soon; bookings are not connected yet.'}</p>
+        {action === 'account' && client.available && (client.user
+          ? <button type="button" className="btn btn-ghost dialog-account-button" onClick={client.signOut}>Sign out</button>
+          : <button type="button" className="btn btn-bone dialog-account-button" onClick={client.signInWithGoogle}>Continue with Google</button>)}
+        {action === 'account' && client.error && <p role="alert" className="dialog-account-error">{client.error}</p>}
         <a href="https://www.instagram.com/skeeondablock/" target="_blank" rel="noreferrer" className="dialog-contact">Message Skee on Instagram ↗</a>
       </dialog>
     </div>
