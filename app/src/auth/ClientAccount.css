@@ -1,0 +1,15 @@
+.client-tabs{display:flex;margin:24px 0 20px;border:1px solid #262626;border-radius:2px}
+.client-tabs button{flex:1;padding:12px 8px;background:transparent;color:#A8A49D;font:inherit;font-size:12px;letter-spacing:.14em;text-transform:uppercase;cursor:pointer}
+.client-tabs button[aria-pressed='true']{background:#F2EFE9;color:#0B0B0B}
+.client-form fieldset{border:0;padding:0;margin:0;min-width:0;display:flex;flex-direction:column;gap:16px}
+.client-form label{display:flex;flex-direction:column;gap:8px;color:#A8A49D;font-size:13px}
+.client-form input{box-sizing:border-box;width:100%;min-height:48px;padding:12px;background:#0B0B0B;color:#F2EFE9;border:1px solid #333;border-radius:2px;font:16px 'Inter Tight',sans-serif}
+.client-form input:focus-visible{outline:1px solid #C9A96A;outline-offset:2px}
+.client-form :disabled{opacity:.5;cursor:wait}
+.client-two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.action-dialog .client-hint{font-size:12px;line-height:1.5;color:#8E8B85;margin:8px 0 0}
+.client-or{text-align:center;margin:20px 0 0!important;font-size:13px!important}
+.client-link{display:block;margin-top:20px;padding:0;background:none;border:0;color:#BDB8B0;font:inherit;font-size:13px;text-decoration:underline;text-underline-offset:4px;text-align:left;cursor:pointer}
+.action-dialog .client-error{margin-top:16px;color:#D98B7A}
+.action-dialog .client-notice{margin-top:16px;color:#C9A96A}
+@media(max-width:420px){.client-two{grid-template-columns:1fr}}

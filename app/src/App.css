@@ -167,7 +167,8 @@ button.card{text-align:left;width:100%}
 .dialog-account-button.btn-bone{background:#F2EFE9;color:#0B0B0B;border:1px solid #F2EFE9}
 .dialog-account-button.btn-ghost{background:transparent;color:#F2EFE9;border:1px solid #262626}
 .action-dialog .dialog-account-error{margin-top:16px;color:#D98B7A}
-.dialog-account-button + .dialog-contact,.dialog-account-error + .dialog-contact{margin-top:12px;background:transparent;color:#BDB8B0;border:1px solid #262626}
+.dialog-contact-quiet{background:transparent;color:#BDB8B0;border:1px solid #262626}
+.dialog-account-button:disabled{opacity:.5;cursor:wait}
 .site-footer .nav button{color:#D9D5CE;font-size:inherit;letter-spacing:inherit;text-transform:inherit}
 .desktop-actions button{justify-content:center}
 @media(min-width:761px) and (max-width:1100px){
