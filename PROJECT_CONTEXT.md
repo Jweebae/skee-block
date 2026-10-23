@@ -500,6 +500,10 @@ The user confirmed Google sign-in worked and asked for a proper sign-up (first/l
 - Switch plan once DNS answers (DNS records can only be added by the user in Namecheap → Domain List → Manage → Nameservers "Namecheap BasicDNS" → Advanced DNS): four `A` records for host `@` → `185.199.108.153`, `185.199.109.153`, `185.199.110.153`, `185.199.111.153`; one `CNAME` for host `www` → `jweebae.github.io`; remove Namecheap's default parking records. Then Claude: (1) verify DNS with `dig`; (2) `gh variable set SITE_BASE --body /`; (3) set the custom domain in Pages (`gh api -X PUT repos/Jweebae/skee-block/pages -f cname=3kee.site`); (4) re-run the deploy workflow; (5) when GitHub has issued the certificate, enable HTTPS enforcement; (6) verify `https://3kee.site/` and the www redirect. Do NOT set the custom domain or `SITE_BASE` before DNS works: GitHub would redirect the old address to a domain that does not resolve yet.
 - Dashboard steps for the user afterwards: Supabase → Authentication → URL Configuration: Site URL `https://3kee.site/` and add `https://3kee.site/**` (keep the old github.io address until the switch is verified); Google Cloud OAuth client: add `https://3kee.site` to Authorized JavaScript origins (the redirect URI stays the Supabase callback).
 
+## Second owner added — 2026-10-23 (Claude Code)
+
+- At the user's request a second person's account (a Google-created client account that had completed the "Almost done" step, so it also has a password) was added to `public.studio_admins` by SQL. The email is not recorded here because the repository is public. Both owners have the same powers: everything the studio panel offers (menu, add-ons, working hours). Owners sign in at `#admin` with email and password (the panel has no Google button); more owners are added only by SQL. Bookings, clients and reviews management do not exist yet.
+
 ## Custom domain 3kee.site switched on — 2026-10-23 (Claude Code)
 
 - LIVE SITE NOW: https://3kee.site/ (owner sign-in at `https://3kee.site/#admin`). The earlier address `https://jweebae.github.io/skee-block/` answers 301 → `https://3kee.site/`, and `www.3kee.site` answers 301 → `https://3kee.site/`.
