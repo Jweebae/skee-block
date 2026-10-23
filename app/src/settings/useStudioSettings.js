@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { readSettings, validateSettings, SETTINGS_KEY } from './studioSettings'
 import { supabase } from '../lib/supabase'
 
@@ -8,36 +8,65 @@ function cacheLocally(settings) {
 
 export default function useStudioSettings() {
   const [state, setState] = useState(readSettings)
+  const revision = useRef(0)
+  const saving = useRef(false)
   useEffect(() => {
-    if (!supabase) return
     let active = true
-    supabase.from('studio_settings').select('payload').eq('id', 'main').maybeSingle().then(({ data, error }) => {
-      if (!active || error || !data) return
+    let pending = false
+    async function refresh() {
+      if (!active || document.hidden || saving.current || pending) return
+      if (!supabase) {
+        setState(readSettings())
+        return
+      }
+      pending = true
+      const request = ++revision.current
       try {
+        const { data, error } = await supabase.from('studio_settings').select('payload').eq('id', 'main').maybeSingle()
+        if (!active || request !== revision.current || error || !data) return
         const settings = validateSettings(data.payload)
         cacheLocally(settings)
-        setState({ settings, error: '' })
+        setState(current => !current.error && JSON.stringify(current.settings) === JSON.stringify(settings) ? current : { settings, error: '' })
       } catch {
-        setState(current => ({ ...current, error: 'The shared studio settings could not be read. Showing the last settings available in this browser.' }))
+        if (active && request === revision.current) setState(current => ({ ...current, error: 'The shared studio settings could not be read. Showing the last settings available in this browser.' }))
+      } finally {
+        pending = false
       }
-    })
-    return () => { active = false }
+    }
+    const storageChanged = event => { if (event.key === SETTINGS_KEY || event.key === null) refresh() }
+    refresh()
+    // Refresh visible visitors without requiring a reload or a paid backend service.
+    const timer = supabase ? window.setInterval(refresh, 15000) : null
+    window.addEventListener('focus', refresh)
+    window.addEventListener('online', refresh)
+    window.addEventListener('storage', storageChanged)
+    document.addEventListener('visibilitychange', refresh)
+    return () => {
+      active = false
+      if (timer) window.clearInterval(timer)
+      window.removeEventListener('focus', refresh)
+      window.removeEventListener('online', refresh)
+      window.removeEventListener('storage', storageChanged)
+      document.removeEventListener('visibilitychange', refresh)
+    }
   }, [])
   async function saveSettings(draft) {
     const settings = validateSettings(draft)
-    if (supabase) {
-      const { error } = await supabase.from('studio_settings').upsert({ id: 'main', payload: settings })
-      if (error) throw new Error('The settings could not be saved online. Check that you are signed in as the owner and that you are connected, then try again. Your draft is still here.')
-      cacheLocally(settings)
-    } else {
-      try {
-        localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings))
-      } catch {
-        throw new Error('This browser could not save the settings. Check storage permissions or available space, then try again. Your draft is still here.')
+    if (saving.current) throw new Error('Settings are already being saved. Please wait.')
+    saving.current = true
+    ++revision.current // Ignore an older read that was started before this save.
+    try {
+      if (supabase) {
+        const { error } = await supabase.from('studio_settings').upsert({ id: 'main', payload: settings })
+        if (error) throw new Error('The settings could not be saved online. Check that you are signed in as the owner and that you are connected, then try again. Your draft is still here.')
+        cacheLocally(settings)
+      } else {
+        try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)) }
+        catch { throw new Error('This browser could not save the settings. Check storage permissions or available space, then try again. Your draft is still here.') }
       }
-    }
-    setState({ settings, error: '' })
-    return settings
+      setState({ settings, error: '' })
+      return settings
+    } finally { saving.current = false }
   }
   return { ...state, saveSettings }
 }

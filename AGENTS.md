@@ -51,7 +51,7 @@ The approved visual identity source is:
 
 ## Git and GitHub
 
-- The repository is `Jweebae/skee-block` (PUBLIC, needed for free GitHub Pages); its root is the `website project` folder. Every push to `main` builds and deploys the live site at https://3kee.site/ (the older github.io address redirects there), so keep `main` building. Because the repository and these notes are public, never write private information into any tracked file or commit message: no phone numbers, addresses, coordinates, client names, secrets, or anything about the owner's private identity beyond what is already there. After meaningful work: update PROJECT_CONTEXT.md, run `npm run build` and `npm run lint` in `app/`, then commit and `git push` so the other agent sees your work. Pull first (`git pull --rebase`) if the other agent may have pushed.
+- The repository is `Jweebae/skee-block` (PUBLIC, needed for free GitHub Pages); its root is the `website project` folder. Every push to `main` builds and deploys the live site at https://3kee.site/ (the older github.io address redirects there), so keep `main` building. Because the repository and these notes are public, never write private information into any tracked file or commit message: no private phone numbers, private addresses, coordinates, client names, secrets, or anything about the owner's private identity beyond what is already there. After meaningful work: update PROJECT_CONTEXT.md, run `npm run build` and `npm run lint` in `app/`, then commit and `git push` so the other agent sees your work. Pull first (`git pull --rebase`) if the other agent may have pushed.
 - The GitHub CLI is at `/Users/mac/.local/bin/gh` (not on PATH) and is already signed in as `Jweebae`; git pushes use it as the credential helper. Do not ask the user for tokens and never write tokens into files.
 - Commit with the repository-local identity already configured; do not change global git settings. Keep commit messages factual.
 - Never commit `.env*` (except `.env.example`), keys, `node_modules`, `dist`, or the unwatermarked originals in `photo-edits/source` and `photo-edits/enhanced`. Gallery photos in the repository are the watermarked masters in `photo-edits/final/` and the WebP files in `app/src/assets/gallery/`.
@@ -67,6 +67,7 @@ The approved visual identity source is:
 
 ## Safety
 
+- Public business phone and broad area explicitly supplied by the user for publication may appear in website source. This does not authorize publishing an exact private studio location or owner/client account details.
 - No secrets or private account data in project files.
 - No fake assumptions when the real code or approved brand files are available.
 - No unverified completion claims.

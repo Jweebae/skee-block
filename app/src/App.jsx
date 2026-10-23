@@ -8,6 +8,7 @@ import './App.css'
 import BookingFlow from './booking/BookingFlow'
 import { BASE_CUT_PRICE } from './booking/catalog'
 import useStudioSettings from './settings/useStudioSettings'
+import { STUDIO_PHONE, STUDIO_AREA, WHATSAPP_URL } from './settings/studioContact'
 import AdminGate from './admin/AdminGate'
 import useClientSession from './auth/useClientSession'
 import ClientAccount from './auth/ClientAccount'
@@ -71,6 +72,11 @@ export default function App() {
   function handleAction(event) {
     const trigger = event.target.closest('[data-action]')
     if (!trigger) return
+    if (trigger.dataset.action === 'whatsapp') {
+      window.open(WHATSAPP_URL, '_blank', 'noopener,noreferrer')
+      setMenuOpen(false)
+      return
+    }
     if (trigger.dataset.action === 'booking') {
       setMenuOpen(false)
       setBookingRequest({ serviceId: trigger.dataset.service || null })
@@ -565,7 +571,7 @@ export default function App() {
               Message on WhatsApp
             </button>
             <span className="contact-note">
-              +213 [XXX XX XX XX] · Opens WhatsApp with a ready-written message
+              {STUDIO_PHONE} · Opens WhatsApp with a ready-written message
             </span>
           </div>
         </div>
@@ -592,7 +598,7 @@ export default function App() {
                 Area
               </span>
               <span className="text-small">
-                [District], M'Sila 28000
+                {STUDIO_AREA}
               </span>
             </div>
             <div className="studio-detail">
@@ -608,7 +614,7 @@ export default function App() {
                 WhatsApp
               </span>
               <span className="text-small">
-                +213 [XXX XX XX XX]
+                {STUDIO_PHONE}
               </span>
             </div>
             <div className="studio-detail">
@@ -702,7 +708,7 @@ export default function App() {
           ? <ClientAccount client={client} onLater={() => dialogRef.current.close()} />
           : <>
             <h2 id="dialog-title" className="serif">{action === 'account' ? 'Your place at the Block.' : 'Talk to Skee.'}</h2>
-            <p>{action === 'account' ? 'Client accounts are coming soon. Contact Skee for help with your appointment or review.' : 'The studio’s WhatsApp number will be added before launch. For now, reach Skee on Instagram.'}</p>
+            <p>{action === 'account' ? 'Client accounts are coming soon. Contact Skee for help with your appointment or review.' : 'Contact Skee on WhatsApp to arrange your visit, or reach him on Instagram.'}</p>
           </>}
         <a href="https://www.instagram.com/skeeondablock/" target="_blank" rel="noreferrer" className={`dialog-contact${action === 'account' && client.available ? ' dialog-contact-quiet' : ''}`}>Message Skee on Instagram ↗</a>
       </dialog>

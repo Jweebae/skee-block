@@ -1,3 +1,4 @@
+import { WHATSAPP_URL } from '../settings/studioContact'
 import { useEffect, useRef, useState } from 'react'
 import logo from '../assets/skee-logo-white.svg'
 import { BASE_CUT_PRICE, formatPrice, getPreviewDates } from './catalog'
@@ -114,7 +115,7 @@ export default function BookingFlow({ settings, initialServiceId, onClose }) {
             <h1 id="booking-title" className="serif" ref={headingRef} tabIndex={-1}>Your visit, <em>considered</em>.</h1>
             <p>Your appointment is under review by Skee.<br />mwalf yripondi fi 10 minutes maximum</p>
             <div className="booking-lock"><span aria-hidden="true"><LockIcon /></span><div><h2 className="serif">Location stays private.</h2><p>Directions unlock only after a real appointment is confirmed.</p></div></div>
-            <a className="booking-primary" href="https://www.instagram.com/skeeondablock/" target="_blank" rel="noreferrer">Arrange a visit with Skee ↗</a>
+            <a className="booking-primary" href={WHATSAPP_URL} target="_blank" rel="noreferrer">Arrange a visit with Skee ↗</a>
             <div className="booking-complete-actions"><button className="booking-secondary" onClick={() => setPreviewDone(false)}>Edit selections</button><button className="booking-secondary" onClick={restart}>Start again</button></div>
           </section> : <>
             <div className="booking-heading"><span className="lbl">Step {step + 1} of 4{step === 1 ? ' · optional' : ''}</span><h1 id="booking-title" className="serif" ref={headingRef} tabIndex={-1}>{TITLES[step]}</h1></div>

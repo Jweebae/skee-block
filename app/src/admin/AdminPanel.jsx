@@ -17,6 +17,13 @@ export default function AdminPanel({ settings, storageError, onSave, owner = nul
   const deleteRef = useRef(null)
   const dirty = JSON.stringify(draft) !== JSON.stringify(settings)
   const headingRef = useRef(null)
+  const previousSettings = useRef(settings)
+  // Adopt remote changes only if this editor has no unsaved work.
+  useEffect(() => {
+    const previous = previousSettings.current
+    previousSettings.current = settings
+    setDraft(current => JSON.stringify(current) === JSON.stringify(previous) ? structuredClone(settings) : current)
+  }, [settings])
 
   useEffect(() => { window.scrollTo(0, 0); headingRef.current?.focus() }, [section])
   useEffect(() => {
