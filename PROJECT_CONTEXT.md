@@ -16,7 +16,7 @@ The website project is the active development workspace. The visual identity fol
 - Preserved Copilot conversation: `chat.json` at the workspace root (25 requests).
 - `website project/brand/visual identity` duplicates the approved root assets; copies were byte-identical at recovery.
 - Root-level `skee-block-app` is an incomplete leftover starter, not the active app. Leave it alone.
-- No `.git` repository was found in the active app or its parent workspace; GitHub deployment/repository configuration is not established by the local files.
+- Repository root: `website project`, remote `Jweebae/skee-block`. GitHub Pages deploys `main` to `https://3kee.site/`; see the 2026-10-23 milestones below.
 
 ## Project purpose
 
@@ -88,7 +88,7 @@ Current repo state confirmed by the actual files:
 
 - React + Vite project
 - package.json includes React 19, React DOM, Vite 8, and oxlint
-- Homepage is ported from the approved desktop HTML export and adapted to the approved mobile home concept. A four-step booking preview and locally saved admin settings panel now exist; production business workflows remain pending.
+- Homepage is ported from the approved desktop HTML export and adapted to the approved mobile home concept. A four-step booking preview, Supabase owner access/shared studio settings, and client account screens now exist; real booking workflows remain pending.
 - Current source file: app/src/App.jsx
 - Styling is custom CSS currently in app/src/App.css and app/src/index.css
 - Logo asset is imported from app/src/assets/skee-logo-white.svg, byte-identical to the approved white SVG. Original black SVG remains available.
@@ -117,7 +117,7 @@ Current repo state confirmed by the actual files:
 - Promotion/discount admin settings
 - Reminder automation
 - Booking cancellation logic with reopened slots
-- Supabase integration beyond owner access and studio settings (bookings, clients, reviews, reminders); owner sign-in and shared settings are built but await a real owner account (see Supabase backend milestone)
+- Supabase integration beyond owner access and studio settings (bookings, client profiles, reviews, reminders). Owner accounts were added by Claude; see the later owner milestones. Recheck current database state through an authorized connector before changing roles.
 - Arabic translation, RTL layouts and finalized Arabic fonts
 - Portrait/hero photo, approved review data, business hours, add-on prices and verified WhatsApp number
 
@@ -125,17 +125,17 @@ Current repo state confirmed by the actual files:
 
 - Frontend: React + Vite
 - Styling: custom CSS and premium design system approach
-- Database/auth: Supabase free tier requested, not integrated
-- Hosting: GitHub hosting requested, not configured or verified deployed
+- Database/auth: separate Skee Block organization and `skee-block` project, ref `jfojdzzafbosqneervtn`; owner access, shared settings and client auth integrated.
+- Hosting: GitHub Pages at `https://3kee.site/`, deployed from `Jweebae/skee-block`.
 - Messaging: WhatsApp Business for conversion
 - Email: free or low-cost automation options considered
 - Review workflow: admin approval model considered
 
 ## Current development milestone
 
-Homepage, four-step booking preview and a locally persisted admin settings panel are implemented as of 2026-10-22. User explicitly requested keeping sample details and building admin controls next. Saved browser settings now drive the menu, booking preferences/pricing/durations, and weekly preview schedule. The latest extension adds card duplication/deletion and grouped add-ons with individually priced types. Secure multi-device business operations are not connected.
+As of 2026-10-23, the existing homepage and four-step booking preview are published on GitHub Pages. Owner sign-in, shared studio settings, and client account screens are implemented. Cuts stay at 800 DA; admin-editable add-on types, preferences, durations and hours retain sample values until changed by an owner. Reservations, client profile records, history and reminders are still pending. Detailed milestones below distinguish actual checks from remaining tests.
 
-### Verification at this milestone
+### Historical verification at the homepage milestone (2026-10-22)
 
 - `npm run build` and `npm run lint` pass.
 - Chrome browser QA: desktop 1440px and mobile 390×844 screenshots inspected; embedded Bodoni Moda regular/italic and Inter Tight fonts load locally; all six services render; no runtime errors observed.
@@ -156,21 +156,21 @@ Homepage, four-step booking preview and a locally persisted admin settings panel
 
 1. Preserve and maintain accurate memory across sessions.
 2. Keep the live website aligned with the approved visual identity.
-3. Review the local studio settings editor, then connect owner authentication and shared persistence. Retain editable sample details until the admin changes them.
-4. Add admin and client management layers.
-5. Connect persistence and business automation.
+3. Authorize this chat’s Supabase connector for the existing Skee Block organization, then verify owner access and the saved settings. Retain editable sample details.
+4. Follow the recorded next feature order: privacy notice, then client profiles.
+5. Add real booking requests, owner approval, conflict-safe reservations and business automation.
 
 ## Known limitations and unresolved issues
 
 - The app has a homepage and interactive booking UI preview, not a production SaaS booking system.
 - Desktop visual styles are directly ported; phone layout uses the approved mobile home board. The mobile concept does not specify every lower-page section, so those use a responsive adaptation of the desktop design. Final user visual review remains pending.
-- No backend is connected yet.
-- No service credentials were added in this milestone. No local Git repository was found; do not describe files as committed or synced.
+- Supabase owner access, settings and client auth are connected in the app; actual booking persistence is not.
+- ChatGPT’s Supabase connector currently only exposes Nexora. Skee Block authorization must be renewed before inspecting or modifying its database; do not create a duplicate project.
 - The project still requires implementation of the actual end-to-end barber workflow.
 
 ## Exact next recommended development step
 
-Review the local admin settings editor at `#admin`: adding/duplicating/deleting cut cards, editing add-ons and their types, Save all changes, and the client add-on → type selection flow with correct pricing and duration. The user explicitly wants the sample details kept for now; do not require finalized names/prices/hours before continuing. Next connect secure owner authentication and shared settings persistence through the agreed Supabase free-tier architecture. Then add conflict-safe reservations and server-authoritative pricing. Keep private location behind real confirmation.
+First restore this chat’s Supabase access to the existing Skee Block organization and verify the existing owner/settings state. Do not recreate the project or replace Claude’s completed auth work. Then continue the recorded feature order: privacy notice, client profiles, and later real booking requests with owner approval, conflict-safe reservations and server-authoritative pricing. Keep private location behind real confirmation.
 
 ## Open business inputs and reference conflicts
 
@@ -519,6 +519,14 @@ The user confirmed Google sign-in worked and asked for a proper sign-up (first/l
 - Verified on `https://3kee.site/`: page and scripts load with root-based asset paths, the four gallery photos with logos show, owner sign-in opens the studio panel and Sign out works (scripted browser, nothing saved).
 - Not changed: the domain is bought and renewed at Namecheap by the user (the free one-month Namecheap hosting is not used). If the repository is ever renamed or Pages is switched off, the DNS records still point at GitHub.
 - Still to do in dashboards (user): Supabase → Authentication → URL Configuration: Site URL `https://3kee.site/` and Redirect URLs include `https://3kee.site/**` (keep the github.io entry until confirmed); Google Cloud → OAuth client "Skee Block web": add `https://3kee.site` and `https://www.3kee.site` to Authorized JavaScript origins (redirect URI stays the Supabase callback). Until the Supabase redirect entry exists, Google sign-in on the new domain may send people back to the old Site URL. Browser sessions are per address, so anyone signed in on the github.io address must sign in again on the new one.
+
+## ChatGPT connection reconciliation — 2026-10-23
+
+- Re-read the local project after the user answered the earlier organization/owner setup questions. Claude’s newer implementation supersedes the earlier unfinished ChatGPT setup plan. The independent Skee Block organization/project already exists according to the committed milestones; no duplicate was created.
+- GitHub connector authenticated successfully; remote `main` and local checkout matched commit `a58dbf3` before this documentation update. The working tree was clean. App source confirms `AdminGate`, Supabase-backed `useStudioSettings`, and the client account screens are integrated.
+- This chat’s Supabase `list_organizations`/`list_projects` still return only Nexora. Reading organization `ffxtckjdcoyaxkgpisco` returned “You do not have permission to perform this action”. Asked the user to reconnect the plugin with Skee Block included. No database changes or owner-role changes were attempted during this reconciliation. The supplied owner email is not stored in this public repository.
+- Fresh `npm run build` and `npm run lint` pass. Build has a non-blocking JavaScript chunk-size warning (about 517 kB before gzip). No new browser or authenticated database verification was performed in this checkpoint.
+- Only project documentation changed. Outstanding database condition from Claude’s notes (invalid test settings payload and locked test accounts) remains unverified in this chat; inspect after authorization instead of assuming it is still present or already resolved.
 
 ## Working continuity
 
