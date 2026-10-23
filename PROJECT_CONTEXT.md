@@ -156,7 +156,7 @@ As of 2026-10-23, the existing homepage and four-step booking preview are publis
 
 1. Preserve and maintain accurate memory across sessions.
 2. Keep the live website aligned with the approved visual identity.
-3. Supabase access is restored and owner membership verified. Replace the invalid empty shared test settings with the existing approved sample settings, then verify owner saving and public loading. Retain editable sample details.
+3. Shared sample settings were restored and public API loading verified on 2026-10-24. Keep samples editable; authenticated owner edits should be checked during the next owner session.
 4. Follow the recorded next feature order: privacy notice, then client profiles.
 5. Add real booking requests, owner approval, conflict-safe reservations and business automation.
 
@@ -165,12 +165,12 @@ As of 2026-10-23, the existing homepage and four-step booking preview are publis
 - The app has a homepage and interactive booking UI preview, not a production SaaS booking system.
 - Desktop visual styles are directly ported; phone layout uses the approved mobile home board. The mobile concept does not specify every lower-page section, so those use a responsive adaptation of the desktop design. Final user visual review remains pending.
 - Supabase owner access, settings and client auth are connected in the app; actual booking persistence is not.
-- ChatGPT’s Supabase access was restored on 2026-10-23. The existing Skee project is healthy; its shared settings row still contains an invalid empty test payload (zero working days), so the app falls back to cached/sample settings.
+- ChatGPT’s Supabase access was restored on 2026-10-23. The invalid empty shared test payload was replaced with the validated existing samples on 2026-10-24; public API reading is verified.
 - The project still requires implementation of the actual end-to-end barber workflow.
 
 ## Exact next recommended development step
 
-Restore the existing sample settings as the shared settings: the current main row has zero cuts, add-ons and working days and fails app validation. Verify an owner save and public loading. Supabase access and owner membership are now confirmed; do not recreate the project or replace completed auth work. Then continue the recorded feature order: privacy notice, client profiles, and later real booking requests with owner approval, conflict-safe reservations and server-authoritative pricing. Keep private location behind real confirmation.
+Add the privacy notice for the current account/sign-in data flows, then client profiles. Shared sample settings are now restored and publicly readable; keep the existing approved branding and sample details. Continue later with real booking requests, owner approval, conflict-safe reservations and server-authoritative pricing. Keep private location behind real confirmation. Authenticated owner editing remains to be checked in a real owner session without requesting passwords in chat.
 
 ## Open business inputs and reference conflicts
 
@@ -535,6 +535,15 @@ The user confirmed Google sign-in worked and asked for a proper sign-up (first/l
 - Two active owner accounts exist; the account specified by the user is already an owner. No emails, user IDs, passwords or connection identifiers are recorded here. No roles were changed and no sign-in was performed.
 - Confirmed the unresolved test payload in `studio_settings`: singleton `main`, version 2, zero cuts, zero add-ons, zero working days. App validation requires seven weekly entries, so this payload is rejected and the cached/sample menu is used. No settings were overwritten during this connection check. Restore the existing samples and verify online saving before the next feature milestone.
 - Security advisor reports one warning: leaked-password protection is disabled. Reference: https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection . No security settings changed.
+
+## Shared settings repaired — 2026-10-24
+
+- User approved continuing with the shared-settings repair. Generated the payload directly from `createDefaultSettings()` and normalized it through the existing `validateSettings()`; no new cut names, prices, types or hours were invented.
+- Replaced `studio_settings.main` only when its entire payload exactly matched the known empty test record (`version: 2`, three empty arrays). The guarded update succeeded, so legitimate owner edits could not be overwritten by this repair. No schema, RLS, owner roles, accounts or frontend source changed.
+- Online settings now contain six cuts, six add-on groups with nested types, seven weekly schedule entries (Friday closed), and fixed base price 800 DA. Add-on prices and durations remain editable samples. The existing server trigger stamped the update; this maintenance write did not impersonate an owner session.
+- Verification: separate database read confirms the saved counts and base price. Using only the configured publishable key and no signed-in session, the public REST API returned the complete payload; it passed the app validator and deep-equaled the normalized source defaults. An anonymous read of `studio_admins` was refused. No credentials or owner data were printed or added to tracked files.
+- Before this repair, the live homepage at `https://3kee.site/` was inspected in-browser: six 800 DA service cards, four gallery links, booking/account controls and the Studio admin link were present. Final live browser recheck was blocked by a declined origin permission; the repair is verified through the API, not claimed as a completed visual booking/owner-save test. No alternate browser route was used.
+- Build and lint pass (existing non-blocking bundle-size warning remains). Next feature step: privacy notice, then client profiles. Locked historical test accounts remain as previously documented; they were not modified.
 
 ## Working continuity
 
