@@ -62,6 +62,7 @@ The approved visual identity source is:
 - The project is `skee-block` (ref `jfojdzzafbosqneervtn`, free plan). Only the publishable key may appear in the app, and only in the git-ignored `app/.env.local`; never a secret/service-role key or database password, and never in docs or commits.
 - Schema changes go through migrations (the Supabase MCP `apply_migration`, or SQL files committed once a repository exists). Keep RLS on for every table, check `get_advisors` after changes, and test with a non-owner account.
 - Owners are listed in `public.studio_admins`; add them by SQL only. Do not create real accounts or invent owner emails; ask the user.
+- Never store a password or owner credentials anywhere (notes, memory, scripts, commits), even if the user pastes them in chat and offers; do not record the owner's email in tracked files either, because the repository is public. Add owners by looking the account up by email in SQL instead.
 - Destructive SQL is declined by the tool permissions in non-interactive runs. Do not retry it verbatim; neutralise what you created (for example ban test users) and give the user the exact statement to run.
 
 ## Safety
