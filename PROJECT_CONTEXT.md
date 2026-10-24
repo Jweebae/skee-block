@@ -595,6 +595,13 @@ The user confirmed Google sign-in worked and asked for a proper sign-up (first/l
 - Verified: built templates render in Chrome with the live logo (three checked visually); no unfilled build placeholders.
 - Also committed by accident with the previous commit: ChatGPT's `photo-edits/hero/HERO_PROMPTS.md` (prompt notes only, no private data). Raw hero photos stay ignored.
 
+## Header portrait candidates — 2026-10-24
+
+- User supplied additional chair and face photographs and requested several hero portraits matching the charcoal website, with low-key warm orange/gold light and a bottom-right 3kee watermark. IMG_4405.PNG was the requested primary face reference.
+- Created three candidates through built-in image_gen: `photo-edits/hero/review/01-chair-signature.png`, `02-chair-reflective.png`, and `03-chair-after-hours.png`. Each is a separate 4:5 portrait with a white 3kee watermark. Seated references respectively: IMG_4427, IMG_4423, IMG_4430; IMG_4425 provided extra face detail. Original source files remain unchanged.
+- Exact generation prompts are in `photo-edits/hero/HERO_PROMPTS.md`. Source conversions and unapproved outputs remain local and git-ignored. Candidate 02 has the strongest tight hero composition; 01 provides direct eye contact; 03 is the relaxed arms-behind-head option. These are generated portraits, not pixel-identical documentary retouches.
+- No hero or gallery website assets were replaced. User selection is pending. App build and lint pass; existing bundle-size warning remains.
+
 ## Working continuity
 
 Two AI agents work on this project on this Mac: ChatGPT (desktop Work/Codex) and Claude Code (VS Code extension). Both edit this same local application and share memory only through `AGENTS.md` and this file. Do not replace the project with a different site builder. Maintain this file incrementally after meaningful milestones, record unfinished work before stopping, and update AGENTS.md when persistent rules change.
