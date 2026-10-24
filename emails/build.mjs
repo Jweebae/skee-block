@@ -6,7 +6,10 @@ import { mkdirSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-const OUT = join(dirname(fileURLToPath(import.meta.url)), 'html')
+const HERE = dirname(fileURLToPath(import.meta.url))
+const OUT = join(HERE, 'html')
+// The website emails are also published on the site, where the send-email Edge Function fetches them (subject = <title>).
+const SITE_TEMPLATES = join(HERE, '..', 'app', 'public', 'email', 'templates')
 const SITE = 'https://3kee.site'
 const LOGO = `${SITE}/email/3kee-logo.png` // app/public/email/3kee-logo.png, served by the website
 const CONTACT = 'contact@3kee.site'
@@ -147,4 +150,7 @@ writeFileSync(join(OUT, 'index.html'), `<!doctype html><meta charset="utf-8"><ti
 ${rows}</table>
 ${TEMPLATES.map(t => `<h2 id="${t.file}">${t.subject}</h2><iframe src="${t.file}" style="width:640px;height:760px;border:1px solid #ccc;background:#0B0B0B"></iframe>`).join('\n')}
 </body>`)
-console.log(`Built ${TEMPLATES.length} templates in ${OUT}`)
+const appTemplates = TEMPLATES.filter(t => t.group === 'app')
+mkdirSync(SITE_TEMPLATES, { recursive: true })
+for (const t of appTemplates) writeFileSync(join(SITE_TEMPLATES, t.file), layout({ title: t.subject, preheader: t.preheader, body: t.body }))
+console.log(`Built ${TEMPLATES.length} templates in ${OUT} and ${appTemplates.length} in ${SITE_TEMPLATES}`)

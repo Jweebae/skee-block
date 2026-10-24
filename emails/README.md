@@ -23,9 +23,9 @@ The two security notifications use `{{ .Email }}` / `{{ .OldEmail }}`; check the
 
 Sender settings (Authentication → **SMTP Settings**): sender name **3kee**, sender email a Gmail "Send mail as"-verified address such as `contact@3kee.site`, host `smtp.gmail.com`, port 465, username = that Gmail address, password = a Gmail App Password typed in by the owner (never stored in this repository).
 
-## 2. Website emails: sent by the site once bookings are stored (not active yet)
+## 2. Website emails: sent through Resend by the `send-email` Edge Function
 
-Bookings are not saved online yet, so nothing sends these today. When the booking backend is built, a Supabase Edge Function (or similar) fills the `{{snake_case}}` placeholders and sends them through the same SMTP account.
+`build.mjs` also publishes these 7 files at `app/public/email/templates/` (live at `https://3kee.site/email/templates/<name>.html`). The Edge Function `supabase/functions/send-email` fetches them, uses the `<title>` as the subject, fills the `{{snake_case}}` placeholders and sends through Resend from `3kee <contact@3kee.site>`. Active today: **welcome**, once per account, when a client finishes creating their account. The booking emails wait for the booking backend and must be sent from the server side.
 
 | When | Subject | File | Placeholders |
 |---|---|---|---|

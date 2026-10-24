@@ -602,6 +602,14 @@ The user confirmed Google sign-in worked and asked for a proper sign-up (first/l
 - Exact generation prompts are in `photo-edits/hero/HERO_PROMPTS.md`. Source conversions and unapproved outputs remain local and git-ignored. Candidate 02 has the strongest tight hero composition; 01 provides direct eye contact; 03 is the relaxed arms-behind-head option. These are generated portraits, not pixel-identical documentary retouches.
 - No hero or gallery website assets were replaced. User selection is pending. App build and lint pass; existing bundle-size warning remains.
 
+## Website emails through Resend — 2026-10-24 (Claude Code)
+
+- Provider: Resend free tier (3,000 emails a month, 100 a day), domain `3kee.site` verified with three Namecheap records: TXT `resend._domainkey` (DKIM), CNAME `rsend` → `rsend-euw1.forge.rmta.net`, CNAME `send` → `send.forge.rmta.net`. No MX change: Namecheap Email Forwarding stays as it is. The API key exists only as the Supabase Edge Function secret `RESEND_API_KEY` (entered by the user in the dashboard; never in the repository or chat).
+- `emails/build.mjs` now also writes the 7 website templates to `app/public/email/templates/<name>.html`, so they are served at `https://3kee.site/email/templates/`. The subject is each file's `<title>`. They hold no private data (the location only appears via the `{{location_url}}` placeholder).
+- Edge Function `supabase/functions/send-email/index.ts`, deployed through the MCP as `send-email` with `verify_jwt` off because it checks the caller's access token itself. It sends from `3kee <contact@3kee.site>` only to the signed-in user's own address. The only template a browser may request is `welcome`, once per account (needs `profile_complete`; marks `app_metadata.welcome_email_sent_at`, which users cannot edit). Placeholder values are HTML-escaped. Booking emails must later be sent server-side when bookings are stored, never on request from the browser.
+- App: `completeProfile` in `app/src/auth/useClientSession.js` calls the function after the account is saved; failures are silent.
+- To change the function: edit the file, then redeploy it with the Supabase MCP `deploy_edge_function` (name `send-email`, `verify_jwt` false). The GitHub integration does not deploy functions.
+
 ## Working continuity
 
 Two AI agents work on this project on this Mac: ChatGPT (desktop Work/Codex) and Claude Code (VS Code extension). Both edit this same local application and share memory only through `AGENTS.md` and this file. Do not replace the project with a different site builder. Maintain this file incrementally after meaningful milestones, record unfinished work before stopping, and update AGENTS.md when persistent rules change.

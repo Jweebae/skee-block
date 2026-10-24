@@ -99,6 +99,8 @@ export default function useClientSession() {
     if (problem) throw new Error('Your account could not be saved. Choose a different password, or try again in a moment.')
     setSession(current => current && { ...current, user: data.user })
     setNotice('Your account is ready.')
+    // The welcome email is a nice-to-have: the send-email function sends it once per account; failures stay silent.
+    supabase.functions.invoke('send-email', { body: { template: 'welcome' } }).catch(() => {})
   }
   async function changePassword({ password, confirm }) {
     checkPassword(password, confirm)
