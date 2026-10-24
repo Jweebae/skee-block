@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import logo from './assets/skee-logo-white.svg'
+import heroPortrait from './assets/hero-portrait.png'
 import curtainTaper from './assets/gallery/curtain-taper.webp'
 import sweptTaper from './assets/gallery/swept-taper.webp'
 import texturedTaper from './assets/gallery/textured-taper.webp'
@@ -199,16 +200,16 @@ export default function App() {
             </div>
           </div>
           <div className="in d2 hero-portrait portrait-frame">
-            <div className="portrait-gradient"></div>
-            <div className="lbl portrait-label portrait-topline">
-              <span>
-                [Photo] Skee at the chair — low key light
-              </span>
-              <span>
-                01
-              </span>
-            </div>
-            <img src={logo} alt="" aria-hidden="true" className="portrait-watermark" />
+            <img
+              src={heroPortrait}
+              alt="Skee seated in the barber chair"
+              className="portrait-image"
+              loading="eager"
+              fetchPriority="high"
+            />
+            <span className="lbl portrait-number">
+              01
+            </span>
             <div className="portrait-caption portrait-bottomline">
               <span className="lbl text-gold">
                 Skee

@@ -600,7 +600,7 @@ The user confirmed Google sign-in worked and asked for a proper sign-up (first/l
 - User supplied additional chair and face photographs and requested several hero portraits matching the charcoal website, with low-key warm orange/gold light and a bottom-right 3kee watermark. IMG_4405.PNG was the requested primary face reference.
 - Created three candidates through built-in image_gen: `photo-edits/hero/review/01-chair-signature.png`, `02-chair-reflective.png`, and `03-chair-after-hours.png`. Each is a separate 4:5 portrait with a white 3kee watermark. Seated references respectively: IMG_4427, IMG_4423, IMG_4430; IMG_4425 provided extra face detail. Original source files remain unchanged.
 - Exact generation prompts are in `photo-edits/hero/HERO_PROMPTS.md`. Source conversions and unapproved outputs remain local and git-ignored. Candidate 02 has the strongest tight hero composition; 01 provides direct eye contact; 03 is the relaxed arms-behind-head option. These are generated portraits, not pixel-identical documentary retouches.
-- No hero or gallery website assets were replaced. User selection is pending. App build and lint pass; existing bundle-size warning remains.
+- Candidate 02 was explicitly approved by the user on 2026-10-24 as the homepage header portrait. It was moved from `photo-edits/hero/review/02-chair-reflective.png` to the local ignored approved archive `photo-edits/enhanced/02-chair-reflective.png`; the exact same bytes are now the live website asset `app/src/assets/hero-portrait.png`. Candidates 01 and 03 remain unapproved and local. The gallery was not changed.
 
 ## Website emails through Resend — 2026-10-24 (Claude Code)
 
@@ -626,11 +626,12 @@ The user confirmed Google sign-in worked and asked for a proper sign-up (first/l
 
 - Scope: "Send a new code" button with a 60-second wait on the code step (`app/src/auth/ClientAccount.jsx`, `ClientAccount.css`); pasting the 3kee auth templates into Supabase (Magic Link must contain `{{ .Token }}`, it currently sends Supabase's default link email, so clients get a link instead of a 6-digit code). No database, function or migration changes.
 
-## In progress — 2026-10-24 (ChatGPT): approved header portrait
+## Approved header portrait — 2026-10-24 (ChatGPT)
 
 - User explicitly approved `haircuts gallery/Oct 24, 2026, 04_30_48 AM.png` for the homepage header portrait box and asked to remove the placeholder text `[Photo] Skee at the chair — low key light`.
-- Scope: `app/src/App.jsx`, `app/src/App.css`, one new website image asset under `app/src/assets/`, and this milestone entry. The existing `01`, bottom caption and side label remain. The obsolete centered placeholder logo is removed because the approved portrait already carries the 3kee watermark. No auth, email, database, admin or settings files are in scope.
-- Claude Code's concurrent emailed-code work is recorded above and uses separate account files. Recheck Git status and this file before the final context update and commit.
+- Completed in `app/src/App.jsx`, `app/src/App.css` and `app/src/assets/hero-portrait.png`. The exact approved 1122×1402 PNG fills the existing 4:5 portrait box on desktop and mobile. The placeholder sentence and obsolete centered placeholder logo were removed because the photo already carries the approved bottom-right 3kee watermark. The existing `01`, bottom caption and side label remain above the image.
+- The source, local approved archive and website asset were SHA-256 checked and match exactly. Build and lint pass; only the existing non-blocking JavaScript chunk-size notice remains. No auth, email, database, admin or settings files changed.
+- Claude Code's concurrent emailed-code work is recorded above and uses separate account files. The working tree and recent commits were rechecked before this completion update.
 
 ## Working continuity
 

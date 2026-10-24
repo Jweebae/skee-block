@@ -64,13 +64,13 @@ a{color:#C9A96A}a:hover{color:#E2C891}
 .facts-row{display:flex;gap:40px;flex-wrap:wrap;padding-top:12px;border-top:1px solid #1E1E1E}
 .fact-item{display:flex;flex-direction:column;gap:6px;padding-top:20px}
 .text-small{font-size:15px}
-.portrait-frame{position:relative;aspect-ratio:4/5;max-height:680px;background:#141414;border:1px solid #222;display:flex;align-items:flex-end;justify-content:space-between;padding:24px;box-sizing:border-box}
-.portrait-gradient{position:absolute;inset:0;background:radial-gradient(120% 80% at 70% 20%,#1F1F1F 0%,#0E0E0E 70%)}
+.portrait-frame{position:relative;aspect-ratio:4/5;max-height:680px;overflow:hidden;background:#141414;border:1px solid #222;display:flex;align-items:flex-end;justify-content:space-between;padding:24px;box-sizing:border-box}
+.portrait-image{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;display:block}
 .portrait-topline{position:absolute;top:24px;left:24px;right:24px;display:flex;justify-content:space-between}
-.portrait-watermark{position:absolute;left:50%;top:50%;width:46%;transform:translate(-50%,-50%);opacity:.07}
-.portrait-bottomline{position:relative;display:flex;flex-direction:column;gap:6px}
+.portrait-number{position:absolute;z-index:1;top:24px;right:24px;color:#D9D5CE;text-shadow:0 1px 8px #0B0B0B}
+.portrait-bottomline{position:relative;z-index:1;display:flex;flex-direction:column;gap:6px;text-shadow:0 1px 8px #0B0B0B}
 .portrait-quote{font-size:26px;font-style:italic}
-.portrait-side-label{position:relative;writing-mode:vertical-rl}
+.portrait-side-label{position:relative;z-index:1;writing-mode:vertical-rl;text-shadow:0 1px 8px #0B0B0B}
 .ticker-frame{overflow:hidden;border-bottom:1px solid #1E1E1E;height:64px;display:flex;align-items:center}
 .ticker-track{display:flex;gap:56px;white-space:nowrap;padding-left:56px;width:max-content}
 .ticker-serif{font-size:22px;font-style:italic}
@@ -193,7 +193,7 @@ button.card{text-align:left;width:100%}
  .hero-title{font-size:56px;line-height:.95;letter-spacing:-.035em}
  .hero-description{font-size:15px;line-height:1.7;max-width:350px;margin-top:0}
  .hero-actions,.hero-facts{display:none}
- .hero-portrait{aspect-ratio:auto;min-height:330px;padding:20px;max-height:none}
+ .hero-portrait{aspect-ratio:4/5;min-height:0;padding:20px;max-height:none}
  .portrait-label{top:18px;left:18px;right:18px;font-size:9px;letter-spacing:.14em}
  .portrait-label span:last-child,.portrait-caption>.lbl,.portrait-est{display:none}.portrait-caption>.serif{font-size:21px}
  .marquee-band{height:56px}.marquee{gap:32px;padding-left:32px}
@@ -222,7 +222,6 @@ button.card{text-align:left;width:100%}
 .skip-link:focus{transform:none}
 @media(max-width:760px){
  .desktop-hero-description{display:none}.mobile-hero-description{display:inline}
- .hero-portrait>img{display:none}
  .contact-band>div>div{min-width:0}
  .contact-band .btn{box-sizing:border-box;max-width:100%;gap:10px;letter-spacing:.1em;padding:0 16px}
  .contact-band .btn+span{overflow-wrap:anywhere}
