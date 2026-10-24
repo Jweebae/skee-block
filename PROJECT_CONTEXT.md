@@ -622,9 +622,12 @@ The user confirmed Google sign-in worked and asked for a proper sign-up (first/l
 - Planned feature queue remains privacy notice, then client profiles and real appointment workflows, subject to current user instructions and any active scope recorded by Claude. Before a privacy notice is written, account for the newly implemented transactional email flow.
 - Verification for this documentation-only handoff: build and lint pass. No website, database, email function, recipients or credentials changed.
 
-## In progress — 2026-10-24 (Claude Code): emailed code flow
+## Emailed code flow fixed — 2026-10-24 (Claude Code)
 
-- Scope: "Send a new code" button with a 60-second wait on the code step (`app/src/auth/ClientAccount.jsx`, `ClientAccount.css`); pasting the 3kee auth templates into Supabase (Magic Link must contain `{{ .Token }}`, it currently sends Supabase's default link email, so clients get a link instead of a 6-digit code). No database, function or migration changes.
+- Problem reported by the user: "Email me a code" sent Supabase's default "Your sign-in link" email (a link, no code), and there was no way to ask for a new code.
+- Fixed in Supabase (dashboard, through the user's signed-in Chrome): "Magic link or OTP" template replaced with `emails/html/auth-code.html` (subject "Your 3kee code", contains `{{ .Token }}`), verified after reload. The other 7 auth templates were already the 3kee ones (checked: confirm sign-up, invite, change email, reset password, reauthentication, password changed and email changed notifications, both switched on).
+- App: the code step now has "Send a new code", disabled with a 60-second countdown after each send (`app/src/auth/ClientAccount.jsx`, `ClientAccount.css`). Checked in a headless browser against a production build.
+- Still open: Supabase custom SMTP is Gmail (`smtp.gmail.com`), so Gmail shows "admin@3kee.site via gmail.com". Recommended: switch Supabase SMTP to Resend (host `smtp.resend.com`, port 465, username `resend`, password = a Resend API key typed by the user, sender `contact@3kee.site`, name 3kee), which signs as 3kee.site.
 
 ## Approved header portrait — 2026-10-24 (ChatGPT)
 
