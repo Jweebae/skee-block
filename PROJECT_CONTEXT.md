@@ -554,6 +554,12 @@ The user confirmed Google sign-in worked and asked for a proper sign-up (first/l
 - Verification: build/lint pass. Offline behavior tests against the actual settings hook verified polling/focus updates, changed cut names, opening/closing Friday, break-aware booking slots, hidden-tab pause, stale-read/save ordering and listener cleanup. Actual homepage/admin components were also rendered through Vite SSR: correct contact values/no placeholders and existing management controls passed. WhatsApp URL destination/message were checked without sending anything. No production settings were edited for tests.
 - Browser origin access for local visual QA was declined; no alternate browser route was used. Visual interaction and real owner-save checks are not claimed for this change. Existing non-blocking bundle-size warning remains. Next planned feature remains privacy notice, then client profiles.
 
+## Browser tab icon — 2026-10-24
+
+- Replaced the default Vite favicon with the approved white 3kee logo on the brand ink background, centered in a square icon. Original logo paths are preserved exactly; the website/header logo is unchanged.
+- `app/public/favicon.svg` contains the icon; `app/index.html` uses the configured base URL and a version query so browsers request the new icon instead of their cached starter icon.
+- Verified SVG parses and every logo path matches the approved app asset; build and lint pass.
+
 ## Working continuity
 
 Two AI agents work on this project on this Mac: ChatGPT (desktop Work/Codex) and Claude Code (VS Code extension). Both edit this same local application and share memory only through `AGENTS.md` and this file. Do not replace the project with a different site builder. Maintain this file incrementally after meaningful milestones, record unfinished work before stopping, and update AGENTS.md when persistent rules change.
