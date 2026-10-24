@@ -89,3 +89,27 @@
 .weekly-hours dd{margin:0;text-align:right}
 @media(max-width:1000px){.admin-shell{grid-template-columns:180px minmax(0,1fr)}.admin-field-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.admin-field-grid>label:first-child{grid-column:1/-1}.admin-time-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.admin-price-rule{flex-wrap:wrap;gap:16px}.admin-price-rule>span:last-child{width:100%;margin:0}.admin-save-bar{flex-wrap:wrap}.admin-save-bar>div{width:100%;margin:0}.admin-save-bar>button{flex:1}}
 @media(max-width:760px){.admin-header{padding:16px 20px;align-items:flex-start;gap:20px}.admin-brand{gap:12px}.admin-brand>span{font-size:9px;letter-spacing:.12em;padding-left:12px}.admin-brand img{height:25px}.admin-header-right>a{font-size:11px}.admin-owner{display:none}.admin-shell{display:block;min-height:100vh}.admin-sidebar{padding:16px 20px;flex-direction:row;overflow-x:auto;border-right:0;border-bottom:1px solid #1E1E1E}.admin-sidebar>button{flex:none;gap:8px;padding:12px 14px;font-size:12px}.admin-sidebar-note{display:none}.admin-main{padding:24px 20px 40px}.admin-preview-note{padding:16px;margin-bottom:28px}.admin-title-row{align-items:flex-start;flex-wrap:wrap}.admin-title-row h1{font-size:36px}.admin-title-row .lbl{font-size:9px}.admin-editor-card{padding:20px}.admin-card-heading{gap:12px;align-items:flex-start}.admin-card-heading>.lbl{font-size:9px;padding-top:5px}.admin-toggle{font-size:11px}.admin-field-grid{gap:14px}.admin-price-rule{padding:20px}.admin-time-grid{gap:14px}.admin-page input:not([type=checkbox]){padding:10px;min-width:0;font-size:16px}.admin-page textarea{font-size:16px}.admin-save-bar{padding:16px;gap:10px;bottom:0}.admin-save-bar>button{padding:0 10px;font-size:9px;letter-spacing:.08em;min-height:46px}.admin-save-bar p{font-size:10px}.admin-dirty-status{font-size:12px}}
+.appt-group{margin:40px 0 16px;font:400 26px/1.2 'Bodoni Moda',serif;color:#F2EFE9}
+.appt-hint{margin:-6px 0 16px;font-size:13px;color:#8E8B85}
+.appt-day{margin-bottom:24px}.appt-day>h3{margin:0 0 12px}
+.appt-card{display:grid;gap:16px}
+.appt-card[data-status=requested]{border-color:#C9A96A66}
+.appt-head{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.appt-head h3{margin:8px 0 4px;font:500 20px/1.3 'Inter Tight',sans-serif;color:#F2EFE9}
+.appt-head p{margin:0;font-size:14px;color:#A8A49D}
+.appt-side{display:grid;justify-items:end;gap:6px;text-align:right}
+.appt-side strong{font-size:18px;color:#F2EFE9;font-variant-numeric:tabular-nums}
+.appt-side small{font-size:12px;color:#8E8B85}
+.appt-status{font-size:10px;letter-spacing:.14em;text-transform:uppercase;padding:5px 8px;border:1px solid currentColor;color:#A8A49D}
+.appt-requested{color:#C9A96A}.appt-confirmed{color:#9DBFA4}.appt-completed{color:#8E8B85}.appt-no_show,.appt-declined,.appt-cancelled,.appt-expired{color:#D9776A}
+.appt-details{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px 24px;margin:0;font-size:14px}
+.appt-details dt{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#6E6B66}
+.appt-details dd{margin:4px 0 0;color:#D9D5CE;overflow-wrap:anywhere}
+.appt-actions{flex-wrap:wrap}
+.appt-move{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}.appt-move label{flex:1 1 160px}
+.appt-whatsapp{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding-top:14px;border-top:1px solid #262626}.appt-whatsapp .lbl{margin-right:6px;color:#8E8B85}
+.appt-walkin{display:grid;gap:18px;margin-bottom:24px}
+.appt-addons{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}.appt-addons>.lbl{grid-column:1/-1}
+.appt-total{margin-right:auto;font-size:14px;color:#D9D5CE;font-variant-numeric:tabular-nums}
+.admin-page select{width:100%;min-height:48px;padding:12px 14px;border:1px solid #2E2E2E;border-radius:2px;background:#0F0F0F;color:#F2EFE9;font:15px/1.5 'Inter Tight',system-ui,sans-serif}
+.appt-closed{margin-top:40px}.appt-closed summary{cursor:pointer;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:#A8A49D;margin-bottom:16px}

@@ -7,6 +7,7 @@ import texturedTaper from './assets/gallery/textured-taper.webp'
 import curlyTaper from './assets/gallery/curly-taper.webp'
 import './App.css'
 import BookingFlow from './booking/BookingFlow'
+import { clearPendingBooking, hasPendingBooking } from './booking/bookingDraft'
 import { BASE_CUT_PRICE } from './booking/catalog'
 import useStudioSettings from './settings/useStudioSettings'
 import { STUDIO_PHONE, STUDIO_AREA, WHATSAPP_URL } from './settings/studioContact'
@@ -71,6 +72,23 @@ export default function App() {
     })
     return () => cancelAnimationFrame(frame)
   }, [client.error, client.ready, client.user, client.profileComplete, client.choosingPassword, client.returnedFromGoogle, isAdmin])
+
+  // A visitor who signed in to send a booking request goes straight back to it.
+  useEffect(() => {
+    if (isAdmin || !client.profileComplete || !hasPendingBooking()) return
+    const frame = requestAnimationFrame(() => {
+      if (dialogRef.current?.open) dialogRef.current.close()
+      if (bookingRequest) clearPendingBooking()
+      else setBookingRequest({ serviceId: null })
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [client.profileComplete, bookingRequest, isAdmin])
+
+  function openAccount() {
+    setAction('account')
+    setMenuOpen(false)
+    if (!dialogRef.current.open) dialogRef.current.showModal()
+  }
 
   function handleAction(event) {
     const trigger = event.target.closest('[data-action]')
@@ -704,7 +722,7 @@ export default function App() {
       </button>
     <div className="mobile-booking-bar"><button className="mobile-book" data-action="booking">Book the chair <span aria-hidden="true">→</span></button><button className="mobile-chat" data-action="whatsapp" aria-label="WhatsApp Skee"><ChatIcon /></button></div>
       <dialog ref={bookingDialogRef} className="booking-dialog" aria-labelledby="booking-title" onClose={() => setBookingRequest(null)}>
-        {bookingRequest && <BookingFlow settings={settings} initialServiceId={bookingRequest.serviceId} onClose={() => bookingDialogRef.current.close()} />}
+        {bookingRequest && <BookingFlow settings={settings} initialServiceId={bookingRequest.serviceId} client={client} onSignIn={openAccount} onOpenAccount={() => { bookingDialogRef.current.close(); openAccount() }} onClose={() => bookingDialogRef.current.close()} />}
       </dialog>
       <dialog ref={dialogRef} aria-labelledby="dialog-title" className="action-dialog" onClick={event => { if (event.target === event.currentTarget) dialogRef.current.close() }}>
         <button className="dialog-close" aria-label="Close" onClick={() => dialogRef.current.close()}>×</button>

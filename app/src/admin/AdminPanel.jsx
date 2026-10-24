@@ -3,14 +3,16 @@ import logo from '../assets/skee-logo-white.svg'
 import { BASE_CUT_PRICE, formatPrice } from '../booking/catalog'
 import AddonEditor from './AddonEditor'
 import OwnerManager from './OwnerManager'
+import AppointmentsManager from './AppointmentsManager'
+import StudioDetails from './StudioDetails'
 import './AdminPanel.css'
 
 const SECTIONS = [ ['cuts', 'Cuts & preferences'], ['addons', 'Add-ons'], ['hours', 'Working hours'] ]
-const OWNER_SECTIONS = [...SECTIONS, ['owners', 'Owners']] // managing owners needs the online database
+const OWNER_SECTIONS = [['appointments', 'Appointments'], ...SECTIONS, ['studio', 'Studio details'], ['owners', 'Owners']] // these need the online database
 
 export default function AdminPanel({ settings, storageError, onSave, owner = null }) {
   const [draft, setDraft] = useState(() => structuredClone(settings))
-  const [section, setSection] = useState('cuts')
+  const [section, setSection] = useState(owner ? 'appointments' : 'cuts')
   const sections = owner ? OWNER_SECTIONS : SECTIONS
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
@@ -122,7 +124,7 @@ export default function AdminPanel({ settings, storageError, onSave, owner = nul
       <main className="admin-main">
         {owner ? <div className="admin-preview-note"><span className="lbl">Owner session</span><p>You are signed in as the owner. Saved changes are stored online and apply to the website on every device. Sample details stay until you change them.</p></div> : <div className="admin-preview-note"><span className="lbl">Local admin preview</span><p>Changes are saved in this browser only. Owner sign-in and shared online storage are not connected yet. Keep the sample details for now.</p></div>}
         {storageError && <p className="admin-error" role="alert">{storageError}</p>}
-        {section === 'owners' ? <OwnerManager headingRef={headingRef} /> : <form onSubmit={save}>
+        {section === 'owners' ? <OwnerManager headingRef={headingRef} /> : section === 'appointments' ? <AppointmentsManager settings={draft} headingRef={headingRef} /> : section === 'studio' ? <StudioDetails headingRef={headingRef} /> : <form onSubmit={save}>
           <div className="admin-title-row"><div><span className="lbl">Skee Block · Studio controls</span><h1 className="serif" ref={headingRef} tabIndex={-1}>{sections.find(([id]) => id === section)[1]}</h1><p>{section === 'cuts' ? 'Edit the menu, styling preferences and time needed for each cut.' : section === 'addons' ? 'Manage add-ons and the types clients choose, with a price and description for each type.' : 'Set Skee’s weekly hours and breaks. The preview calendar follows this schedule.'}</p></div>{section !== 'hours' && <button type="button" className="admin-outline" disabled={draft[section === 'cuts' ? 'services' : 'addons'].length >= 100} onClick={() => addItem(section === 'cuts' ? 'services' : 'addons')}>+ New {section === 'cuts' ? 'cut' : 'add-on'}</button>}</div>
 
           {section === 'cuts' && <><div className="admin-price-rule"><span className="lbl">Fixed base price</span><strong>{formatPrice(BASE_CUT_PRICE)}</strong><span>Applies to every cut. Only optional add-ons change the total.</span></div><div className="admin-editor-list">{draft.services.map((item, index) => <section className="admin-editor-card" key={item.id} aria-label={`Cut ${index + 1}`}><div className="admin-card-heading"><span className="lbl">Cut {String(index + 1).padStart(2, '0')}</span><label className="admin-toggle"><input type="checkbox" checked={item.visible} onChange={e => update('services', item.id, 'visible', e.target.checked)} />Visible on website</label></div>

@@ -111,12 +111,12 @@ const TEMPLATES = [
   {
     file: 'booking-received.html', group: 'app', where: 'When a client sends a booking request', subject: 'We received your request',
     preheader: 'Your appointment is under review.',
-    body: label('Appointment request') + heading('Under review.') + para('Thank you, {{first_name}}. Your request is under review and we usually reply within 10 minutes.') + details([['Service', '{{service}}'], ['Extras', '{{extras}}'], ['Date', '{{date}}'], ['Time', '{{time}}'], ['Duration', '{{duration}}'], ['Total', '{{total}}']]) + small('This is not a confirmation yet. You will receive a second email once your appointment is confirmed.'),
+    body: label('Appointment request') + heading('Under review.') + para('Thank you, {{first_name}}. Your request is under review and we usually reply within 10 minutes.') + details([['Booking', '{{code}}'], ['Service', '{{service}}'], ['Extras', '{{extras}}'], ['Date', '{{date}}'], ['Time', '{{time}}'], ['Duration', '{{duration}}'], ['Total', '{{total}}']]) + small('This is not a confirmation yet. You will receive a second email once your appointment is confirmed.'),
   },
   {
     file: 'booking-confirmed.html', group: 'app', where: 'When the barber confirms the appointment', subject: 'Your 3kee appointment is confirmed',
     preheader: '{{date}} at {{time}}. The chair is yours.',
-    body: label('Confirmed') + heading('The chair is yours.') + para('{{first_name}}, your appointment is confirmed.') + details([['Service', '{{service}}'], ['Extras', '{{extras}}'], ['Date', '{{date}}'], ['Time', '{{time}}'], ['Total', '{{total}}']]) + para('The studio’s exact location is shared with confirmed clients only.') + button('Open the location', '{{location_url}}') + small('Need to change or cancel? Reply to this email as early as you can.'),
+    body: label('Confirmed') + heading('The chair is yours.') + para('{{first_name}}, your appointment is confirmed.') + details([['Booking', '{{code}}'], ['Service', '{{service}}'], ['Extras', '{{extras}}'], ['Date', '{{date}}'], ['Time', '{{time}}'], ['Total', '{{total}}']]) + para('The studio’s exact location is shared with confirmed clients only.') + button('Open the location', '{{location_url}}') + small('Need to change or cancel? Reply to this email as early as you can.'),
   },
   {
     file: 'booking-reminder.html', group: 'app', where: 'Morning of the appointment day', subject: 'Today at 3kee: {{time}}',
@@ -132,6 +132,21 @@ const TEMPLATES = [
     file: 'booking-cancelled.html', group: 'app', where: 'When an appointment is cancelled', subject: 'Your 3kee appointment was cancelled',
     preheader: 'Your appointment on {{date}} was cancelled.',
     body: label('Cancelled') + heading('Appointment cancelled.') + para('{{first_name}}, your appointment on {{date}} at {{time}} has been cancelled.') + para('We hope to see you in the chair soon.') + button('Book another time', SITE),
+  },
+  {
+    file: 'booking-declined.html', group: 'app', where: 'When Skee cannot take a requested time', subject: 'We couldn’t take this time',
+    preheader: 'Your requested time is not available.',
+    body: label('Request') + heading('This time is taken.') + para('{{first_name}}, Skee could not take your request for {{date}} at {{time}}. Nothing was charged.') + para('Pick another hour and the chair is yours.') + button('Choose another time', SITE) + small('Questions? Reply to this email or write to Skee on WhatsApp.'),
+  },
+  {
+    file: 'owner-new-request.html', group: 'app', where: 'To every owner when a client sends a request', subject: 'New request {{code}}: {{date}} at {{time}}',
+    preheader: '{{client_name}} asks for {{service}}.',
+    body: label('Owner · new request') + heading('A new request.') + details([['Booking', '{{code}}'], ['Client', '{{client_name}}'], ['WhatsApp', '{{phone}}'], ['Service', '{{service}}'], ['Extras', '{{extras}}'], ['Date', '{{date}}'], ['Time', '{{time}}'], ['Duration', '{{duration}}'], ['Total', '{{total}}'], ['Notes', '{{notes}}']]) + button('Answer in the admin page', '{{admin_url}}') + small('The client was told Skee usually replies within 10 minutes.'),
+  },
+  {
+    file: 'owner-cancelled.html', group: 'app', where: 'To every owner when a client cancels', subject: 'Cancelled {{code}}: {{date}} at {{time}}',
+    preheader: '{{client_name}} cancelled. The slot is free again.',
+    body: label('Owner · cancellation') + heading('A client cancelled.') + details([['Booking', '{{code}}'], ['Client', '{{client_name}}'], ['WhatsApp', '{{phone}}'], ['Service', '{{service}}'], ['Date', '{{date}}'], ['Time', '{{time}}']]) + para('The slot is free again on the website.') + button('Open the admin page', '{{admin_url}}'),
   },
   {
     file: 'review-request.html', group: 'app', where: 'The day after a visit', subject: 'How was your cut?',
