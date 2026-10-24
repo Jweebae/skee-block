@@ -2,13 +2,16 @@ import { useEffect, useRef, useState } from 'react'
 import logo from '../assets/skee-logo-white.svg'
 import { BASE_CUT_PRICE, formatPrice } from '../booking/catalog'
 import AddonEditor from './AddonEditor'
+import OwnerManager from './OwnerManager'
 import './AdminPanel.css'
 
 const SECTIONS = [ ['cuts', 'Cuts & preferences'], ['addons', 'Add-ons'], ['hours', 'Working hours'] ]
+const OWNER_SECTIONS = [...SECTIONS, ['owners', 'Owners']] // managing owners needs the online database
 
 export default function AdminPanel({ settings, storageError, onSave, owner = null }) {
   const [draft, setDraft] = useState(() => structuredClone(settings))
   const [section, setSection] = useState('cuts')
+  const sections = owner ? OWNER_SECTIONS : SECTIONS
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const [discardOpen, setDiscardOpen] = useState(false)
@@ -115,12 +118,12 @@ export default function AdminPanel({ settings, storageError, onSave, owner = nul
   return <div className="admin-page">
     <header className="admin-header"><a href="#top" className="admin-brand" onClick={leave}><img src={logo} alt="SKEE" /><span>Studio admin</span></a><div className="admin-header-right"><a href="#top" onClick={leave}>View website ↗</a><div className="admin-owner"><span>S</span><div>Said<small>Owner · public name “Skee”</small></div></div>{owner && <button type="button" className="admin-outline" onClick={signOut}>Sign out</button>}</div></header>
     <div className="admin-shell">
-      <nav className="admin-sidebar" aria-label="Admin sections">{SECTIONS.map(([id, label], index) => <button key={id} aria-current={section === id ? 'page' : undefined} onClick={() => { setSection(id); setMessage(''); setError('') }}><span>0{index + 1}</span>{label}</button>)}<div className="admin-sidebar-note"><span className="lbl">Studio settings</span><p>One base cut.<br />{formatPrice(BASE_CUT_PRICE)}.<br />Only extras add to the bill.</p></div></nav>
+      <nav className="admin-sidebar" aria-label="Admin sections">{sections.map(([id, label], index) => <button key={id} aria-current={section === id ? 'page' : undefined} onClick={() => { setSection(id); setMessage(''); setError('') }}><span>0{index + 1}</span>{label}</button>)}<div className="admin-sidebar-note"><span className="lbl">Studio settings</span><p>One base cut.<br />{formatPrice(BASE_CUT_PRICE)}.<br />Only extras add to the bill.</p></div></nav>
       <main className="admin-main">
         {owner ? <div className="admin-preview-note"><span className="lbl">Owner session</span><p>You are signed in as the owner. Saved changes are stored online and apply to the website on every device. Sample details stay until you change them.</p></div> : <div className="admin-preview-note"><span className="lbl">Local admin preview</span><p>Changes are saved in this browser only. Owner sign-in and shared online storage are not connected yet. Keep the sample details for now.</p></div>}
         {storageError && <p className="admin-error" role="alert">{storageError}</p>}
-        <form onSubmit={save}>
-          <div className="admin-title-row"><div><span className="lbl">Skee Block · Studio controls</span><h1 className="serif" ref={headingRef} tabIndex={-1}>{SECTIONS.find(([id]) => id === section)[1]}</h1><p>{section === 'cuts' ? 'Edit the menu, styling preferences and time needed for each cut.' : section === 'addons' ? 'Manage add-ons and the types clients choose, with a price and description for each type.' : 'Set Skee’s weekly hours and breaks. The preview calendar follows this schedule.'}</p></div>{section !== 'hours' && <button type="button" className="admin-outline" disabled={draft[section === 'cuts' ? 'services' : 'addons'].length >= 100} onClick={() => addItem(section === 'cuts' ? 'services' : 'addons')}>+ New {section === 'cuts' ? 'cut' : 'add-on'}</button>}</div>
+        {section === 'owners' ? <OwnerManager headingRef={headingRef} /> : <form onSubmit={save}>
+          <div className="admin-title-row"><div><span className="lbl">Skee Block · Studio controls</span><h1 className="serif" ref={headingRef} tabIndex={-1}>{sections.find(([id]) => id === section)[1]}</h1><p>{section === 'cuts' ? 'Edit the menu, styling preferences and time needed for each cut.' : section === 'addons' ? 'Manage add-ons and the types clients choose, with a price and description for each type.' : 'Set Skee’s weekly hours and breaks. The preview calendar follows this schedule.'}</p></div>{section !== 'hours' && <button type="button" className="admin-outline" disabled={draft[section === 'cuts' ? 'services' : 'addons'].length >= 100} onClick={() => addItem(section === 'cuts' ? 'services' : 'addons')}>+ New {section === 'cuts' ? 'cut' : 'add-on'}</button>}</div>
 
           {section === 'cuts' && <><div className="admin-price-rule"><span className="lbl">Fixed base price</span><strong>{formatPrice(BASE_CUT_PRICE)}</strong><span>Applies to every cut. Only optional add-ons change the total.</span></div><div className="admin-editor-list">{draft.services.map((item, index) => <section className="admin-editor-card" key={item.id} aria-label={`Cut ${index + 1}`}><div className="admin-card-heading"><span className="lbl">Cut {String(index + 1).padStart(2, '0')}</span><label className="admin-toggle"><input type="checkbox" checked={item.visible} onChange={e => update('services', item.id, 'visible', e.target.checked)} />Visible on website</label></div>
             <div className="admin-field-grid"><label>Cut name<input id={`${item.id}-name`} aria-label={`Cut ${index + 1} name`} value={item.name} maxLength={80} required onChange={e => update('services', item.id, 'name', e.target.value)} /></label><label>Duration · minutes<input aria-label={`Cut ${index + 1} duration`} type="number" min="5" max="240" step="1" required value={item.duration} onChange={e => update('services', item.id, 'duration', e.target.value)} /></label><label>Category<input aria-label={`Cut ${index + 1} category`} value={item.category} maxLength={60} required onChange={e => update('services', item.id, 'category', e.target.value)} /></label></div>
@@ -132,7 +135,7 @@ export default function AdminPanel({ settings, storageError, onSave, owner = nul
 
           <div className="admin-save-bar"><div><span className="admin-dirty-status">{dirty ? 'Unsaved changes' : 'No unsaved changes'}</span><p>{owner ? 'Saved changes apply to the website and booking preview on every device.' : 'Saved changes apply to this browser’s website and booking preview.'}</p></div><button type="button" className="admin-outline" disabled={!dirty} onClick={() => { setDraft(structuredClone(settings)); setError(''); setMessage('Draft discarded. Saved settings kept.') }}>Discard changes</button><button type="submit" className="admin-save" disabled={!dirty}>Save all changes</button></div>
           {error && <p className="admin-error" role="alert">{error}</p>}{message && <p className="admin-message" role="status">{message}</p>}
-        </form>
+        </form>}
       </main>
     </div>
     <dialog ref={deleteRef} className="admin-discard-dialog" aria-labelledby="delete-title" aria-describedby="delete-description" onClose={() => setDeleteTarget(null)}><h2 id="delete-title" className="serif">Delete this {deleteTarget?.kind}?</h2><p id="delete-description">Remove “{deleteTarget?.name}”{deleteTarget?.kind === 'add-on' ? ' and all its types' : ''} from the draft? Save all changes to apply the deletion. Discard changes can restore it before saving.</p><div><button autoFocus className="admin-outline" onClick={() => deleteRef.current.close()}>Keep it</button><button className="admin-save" onClick={deleteItem}>Delete {deleteTarget?.kind}</button></div></dialog>

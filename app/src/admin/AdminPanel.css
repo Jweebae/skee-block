@@ -70,6 +70,12 @@
 .admin-error,.admin-message{padding:18px 22px;border:1px solid #262626;font-size:14px;line-height:1.6;overflow-wrap:anywhere}
 .admin-error{color:#D9776A;border-color:#D9776A66;background:#D9776A08}
 .admin-message{color:#9DBFA4}
+.admin-owner-row{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.admin-owner-row strong{font-size:16px;font-weight:500;overflow-wrap:anywhere}
+.admin-owner-row small{display:block;margin-top:6px;font-size:12px;color:#8E8B85}
+.admin-owner-you{margin-left:10px;padding:3px 8px;border:1px solid #C9A96A66;color:#C9A96A;font-size:10px;letter-spacing:.12em;text-transform:uppercase;vertical-align:2px}
+.admin-owner-add{display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;margin:24px 0}
+.admin-owner-add label{flex:1 1 280px}
 .admin-empty{padding:32px;border:1px dashed #333;font-size:15px;color:#A8A49D;line-height:1.6}
 .admin-discard-dialog{width:min(480px,calc(100% - 40px));padding:32px;border:1px solid #C9A96A;background:#131313;color:#F2EFE9;border-radius:2px}
 .admin-discard-dialog::backdrop{background:#000b;backdrop-filter:blur(6px)}

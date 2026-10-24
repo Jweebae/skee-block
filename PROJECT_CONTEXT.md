@@ -637,6 +637,14 @@ The user confirmed Google sign-in worked and asked for a proper sign-up (first/l
 - The source, local approved archive and website asset were SHA-256 checked and match exactly. Build and lint pass; only the existing non-blocking JavaScript chunk-size notice remains. No auth, email, database, admin or settings files changed.
 - Claude Code's concurrent emailed-code work is recorded above and uses separate account files. The working tree and recent commits were rechecked before this completion update.
 
+## In progress — 2026-10-24 (Claude Code): owners manage owners
+
+- Goal (user request): owners add and remove owners themselves, without an agent or SQL.
+- Done and pushed: admin page section "Owners" (`app/src/admin/OwnerManager.jsx`, wired in `AdminPanel.jsx`, styles in `AdminPanel.css`), shown only for an online owner session. It lists owners (email, since when, "You"), adds an owner by the email of an existing 3kee account, and removes another owner after a confirm step. Build and lint pass. Until the database part exists it shows "Owner management is not set up in the database yet."
+- Waiting on the user: the Supabase MCP declined both the rolled-back test and `apply_migration` for the new functions, so the user runs the SQL by hand in the Supabase SQL editor. The SQL is `supabase/migrations/20261024053709_studio_owner_management.sql` (local, NOT committed yet: committing it makes the GitHub integration apply it, which must wait for the user's run). It uses `create or replace`, so the integration can safely re-run it after the user has.
+- Next action after the user confirms: check the functions exist (read-only query on `pg_proc` and grants), run `get_advisors`, have the user try adding and removing an owner, then commit and push the migration file and mark this entry done.
+- Security design: four `security definer` functions with `search_path = ''`, executable by `authenticated` only (revoked from `anon` and `public`), each starting with an owner check (`is_studio_owner()`); add only finds existing `auth.users` by case/space-insensitive email; remove refuses the caller's own id, so at least one owner always remains. Direct writes to `studio_admins` stay impossible for app users (no insert/delete grant).
+
 ## Working continuity
 
 Two AI agents work on this project on this Mac: ChatGPT (desktop Work/Codex) and Claude Code (VS Code extension). Both edit this same local application and share memory only through `AGENTS.md` and this file. Do not replace the project with a different site builder. Maintain this file incrementally after meaningful milestones, record unfinished work before stopping, and update AGENTS.md when persistent rules change.
