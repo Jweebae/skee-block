@@ -1,6 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { MIN_PASSWORD } from './useClientSession'
 import './ClientAccount.css'
+
+const RESEND_AFTER = 60 // seconds; Supabase also refuses a new code for the same email within about a minute
 
 // Runs a form action, showing a readable message instead of an error screen.
 function useAction() {
@@ -41,7 +43,13 @@ function SignedOut({ client }) {
   const [step, setStep] = useState('password')
   const [code, setCode] = useState('')
   const [info, setInfo] = useState('')
+  const [wait, setWait] = useState(0)
   const { busy, problem, run } = useAction()
+  useEffect(() => {
+    if (!wait) return
+    const timer = setTimeout(() => setWait(left => left - 1), 1000)
+    return () => clearTimeout(timer)
+  }, [wait])
   const signIn = event => {
     event.preventDefault()
     run(async () => {
@@ -51,8 +59,8 @@ function SignedOut({ client }) {
   const emailCode = () => run(async () => {
     if (!email.trim()) throw new Error('Enter your email address first.')
     await client.sendCode(email)
-    setInfo('If this email has an account, a 6-digit code is on its way. It can take a minute.')
-    setStep('code')
+    setInfo(step === 'code' ? 'A new code is on its way. Use the newest one.' : 'If this email has an account, a 6-digit code is on its way. It can take a minute.')
+    setCode(''); setStep('code'); setWait(RESEND_AFTER)
   })
   return <>
     <h2 id="dialog-title" className="serif">Your place at the Block.</h2>
@@ -72,8 +80,9 @@ function SignedOut({ client }) {
           <button type="submit" className="btn btn-bone dialog-account-button">{busy ? 'Please wait…' : 'Confirm code'}</button>
         </fieldset>
       </form>
+      <p className="client-hint">No email? Check your spam folder, ask for a new code, or confirm with Google instead.</p>
+      <button type="button" className="client-link" disabled={busy || wait > 0} onClick={emailCode}>{wait > 0 ? `Send a new code in ${wait} s` : 'Send a new code'}</button>
       <button type="button" className="client-link" onClick={() => { setStep('password'); setCode(''); setInfo('') }}>Back</button>
-      <p className="client-hint">No email? Check your spam folder, or confirm with Google instead.</p>
       <GoogleButton client={client} reset quiet>Confirm with Google</GoogleButton>
     </> : <>
       <form className="client-form" onSubmit={signIn}>

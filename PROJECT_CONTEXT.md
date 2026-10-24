@@ -622,6 +622,16 @@ The user confirmed Google sign-in worked and asked for a proper sign-up (first/l
 - Planned feature queue remains privacy notice, then client profiles and real appointment workflows, subject to current user instructions and any active scope recorded by Claude. Before a privacy notice is written, account for the newly implemented transactional email flow.
 - Verification for this documentation-only handoff: build and lint pass. No website, database, email function, recipients or credentials changed.
 
+## In progress — 2026-10-24 (Claude Code): emailed code flow
+
+- Scope: "Send a new code" button with a 60-second wait on the code step (`app/src/auth/ClientAccount.jsx`, `ClientAccount.css`); pasting the 3kee auth templates into Supabase (Magic Link must contain `{{ .Token }}`, it currently sends Supabase's default link email, so clients get a link instead of a 6-digit code). No database, function or migration changes.
+
+## In progress — 2026-10-24 (ChatGPT): approved header portrait
+
+- User explicitly approved `haircuts gallery/Oct 24, 2026, 04_30_48 AM.png` for the homepage header portrait box and asked to remove the placeholder text `[Photo] Skee at the chair — low key light`.
+- Scope: `app/src/App.jsx`, `app/src/App.css`, one new website image asset under `app/src/assets/`, and this milestone entry. The existing `01`, bottom caption and side label remain. The obsolete centered placeholder logo is removed because the approved portrait already carries the 3kee watermark. No auth, email, database, admin or settings files are in scope.
+- Claude Code's concurrent emailed-code work is recorded above and uses separate account files. Recheck Git status and this file before the final context update and commit.
+
 ## Working continuity
 
 Two AI agents work on this project on this Mac: ChatGPT (desktop Work/Codex) and Claude Code (VS Code extension). Both edit this same local application and share memory only through `AGENTS.md` and this file. Do not replace the project with a different site builder. Maintain this file incrementally after meaningful milestones, record unfinished work before stopping, and update AGENTS.md when persistent rules change.

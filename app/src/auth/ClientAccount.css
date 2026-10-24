@@ -10,6 +10,7 @@
 .action-dialog .client-hint{font-size:12px;line-height:1.5;color:#8E8B85;margin:8px 0 0}
 .client-or{text-align:center;margin:20px 0 0!important;font-size:13px!important}
 .client-link{display:block;margin-top:20px;padding:0;background:none;border:0;color:#BDB8B0;font:inherit;font-size:13px;text-decoration:underline;text-underline-offset:4px;text-align:left;cursor:pointer}
+.client-link:disabled{color:#8E8B85;text-decoration:none;cursor:default}
 .action-dialog .client-error{margin-top:16px;color:#D98B7A}
 .action-dialog .client-notice{margin-top:16px;color:#C9A96A}
 .client-form .client-check{flex-direction:row;align-items:flex-start;gap:12px;line-height:1.5}
