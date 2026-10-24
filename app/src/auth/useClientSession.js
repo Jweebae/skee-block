@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { PRIVACY_VERSION } from '../legal/privacy'
 
 export const MIN_PASSWORD = 10
 const RESET_KEY = 'skee.client-reset' // non-secret marker: the client proved they own their email and is now choosing a new password
@@ -90,10 +91,11 @@ export default function useClientSession() {
     if (problem) throw new Error('That code is not right or has expired. Ask for a new one, or confirm with Google instead.')
     storeReset(true); setResetting(true)
   }
-  async function completeProfile({ firstName, lastName, password, confirm }) {
+  async function completeProfile({ firstName, lastName, password, confirm, accepted }) {
     const first = cleanName(firstName, 'first name'), last = cleanName(lastName, 'last name')
     checkPassword(password, confirm)
-    const { data, error: problem } = await supabase.auth.updateUser({ password, data: { first_name: first, last_name: last, profile_complete: true } })
+    if (!accepted) throw new Error('Please read and accept the privacy notice to create your account.')
+    const { data, error: problem } = await supabase.auth.updateUser({ password, data: { first_name: first, last_name: last, profile_complete: true, privacy_version: PRIVACY_VERSION, privacy_accepted_at: new Date().toISOString() } })
     if (problem) throw new Error('Your account could not be saved. Choose a different password, or try again in a moment.')
     setSession(current => current && { ...current, user: data.user })
     setNotice('Your account is ready.')

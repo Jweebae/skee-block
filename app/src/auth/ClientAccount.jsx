@@ -13,6 +13,11 @@ function useAction() {
   return { busy, problem, run }
 }
 
+// Opens in a new tab so a half-filled form is not lost.
+function PrivacyLink() {
+  return <a href="#privacy" target="_blank" rel="noreferrer">privacy notice</a>
+}
+
 function Field({ label, hint, ...props }) {
   return <label>{label}<input {...props} />{hint && <span className="client-hint">{hint}</span>}</label>
 }
@@ -58,7 +63,7 @@ function SignedOut({ client }) {
     {mode === 'signup' ? <>
       <p>Create your account in two steps. First we confirm your email with Google. Then you choose your name and a password.</p>
       <GoogleButton client={client}>Continue with Google</GoogleButton>
-      <p className="client-hint">We only receive your name and email address from Google.</p>
+      <p className="client-hint">Google shares only your name, email address and profile picture link with us. By creating an account you accept our <PrivacyLink />.</p>
     </> : step === 'code' ? <>
       <p>Enter the 6-digit code we emailed to {email.trim()}.</p>
       <form className="client-form" onSubmit={event => { event.preventDefault(); run(() => client.verifyCode(email, code)) }}>
@@ -80,6 +85,7 @@ function SignedOut({ client }) {
       </form>
       <p className="client-or">or</p>
       <GoogleButton client={client}>Continue with Google</GoogleButton>
+      <p className="client-hint">New to Skee Block? Continuing with Google creates your account, and means you accept our <PrivacyLink />.</p>
     </>}
     {step === 'password' && failed && mode === 'signin' && <div className="client-recover">
       <p>Forgot your password? First prove this email is yours, then you can choose a new password.</p>
@@ -94,7 +100,7 @@ function SignedOut({ client }) {
 function FinishAccount({ client, onLater }) {
   const meta = client.user.user_metadata || {}
   const [first, ...rest] = String(meta.full_name || meta.name || '').trim().split(/\s+/)
-  const [fields, setFields] = useState({ firstName: first || '', lastName: rest.join(' '), password: '', confirm: '' })
+  const [fields, setFields] = useState({ firstName: first || '', lastName: rest.join(' '), password: '', confirm: '', accepted: false })
   const { busy, problem, run } = useAction()
   const set = key => event => setFields(current => ({ ...current, [key]: event.target.value }))
   return <>
@@ -108,6 +114,7 @@ function FinishAccount({ client, onLater }) {
         </div>
         <Field label="Password" type="password" autoComplete="new-password" required minLength={MIN_PASSWORD} hint={`At least ${MIN_PASSWORD} characters.`} value={fields.password} onChange={set('password')} />
         <Field label="Confirm password" type="password" autoComplete="new-password" required minLength={MIN_PASSWORD} value={fields.confirm} onChange={set('confirm')} />
+        <label className="client-check"><input type="checkbox" required checked={fields.accepted} onChange={event => setFields(current => ({ ...current, accepted: event.target.checked }))} /><span>I have read and accept the <PrivacyLink />.</span></label>
         <button type="submit" className="btn btn-bone dialog-account-button">{busy ? 'Please wait…' : 'Create my account'}</button>
       </fieldset>
     </form>

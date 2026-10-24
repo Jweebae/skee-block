@@ -12,6 +12,7 @@ import { STUDIO_PHONE, STUDIO_AREA, WHATSAPP_URL } from './settings/studioContac
 import AdminGate from './admin/AdminGate'
 import useClientSession from './auth/useClientSession'
 import ClientAccount from './auth/ClientAccount'
+import PrivacyNotice from './legal/PrivacyNotice'
 
 
 function ChatIcon() {
@@ -24,6 +25,7 @@ export default function App() {
   const { settings, error: storageError, saveSettings } = useStudioSettings()
   const client = useClientSession()
   const [isAdmin, setIsAdmin] = useState(() => window.location.hash === '#admin')
+  const [isPrivacy, setIsPrivacy] = useState(() => window.location.hash === '#privacy')
   const visibleServices = settings.services.filter(item => item.visible)
   const openDays = settings.hours.filter(item => item.open)
   const hoursSummary = openDays.length === 0 ? 'Closed this week' : openDays.length === 6 && !settings.hours[5].open && openDays.every(item => item.start === openDays[0].start && item.end === openDays[0].end) ? `Sat–Thu · ${openDays[0].start}–${openDays[0].end}` : `${openDays.length} open days · See weekly hours`
@@ -35,7 +37,7 @@ export default function App() {
   const [bookingRequest, setBookingRequest] = useState(null)
 
   useEffect(() => {
-    const navigate = () => { setBookingRequest(null); setMenuOpen(false); setIsAdmin(window.location.hash === '#admin') }
+    const navigate = () => { setBookingRequest(null); setMenuOpen(false); setIsAdmin(window.location.hash === '#admin'); setIsPrivacy(window.location.hash === '#privacy') }
     window.addEventListener('hashchange', navigate)
     return () => window.removeEventListener('hashchange', navigate)
   }, [])
@@ -88,6 +90,7 @@ export default function App() {
   }
 
   if (isAdmin) return <AdminGate settings={settings} storageError={storageError} onSave={saveSettings} />
+  if (isPrivacy) return <PrivacyNotice />
 
   return (
     <div onClick={handleAction}>
@@ -679,6 +682,7 @@ export default function App() {
           </div>
           <div className="lbl footer-bottom">
             <a href="#admin">Studio admin</a>
+            <a href="#privacy">Privacy</a>
             <span>
               © Skee Block · M'Sila, Algeria
             </span>
