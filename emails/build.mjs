@@ -1,11 +1,12 @@
 // Builds every 3kee email from one shared layout so they stay consistent.
-// Run: node emails/build.mjs  → writes emails/dist/*.html and a preview page emails/dist/index.html.
+// Run: node emails/build.mjs  → writes emails/html/*.html and a preview page emails/html/index.html.
+// (Not "dist": that name is git-ignored project-wide, and these finished files are meant to be committed.)
 // Email clients ignore <style> blocks and SVG inconsistently, so everything is inline styles, tables and a PNG logo.
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-const OUT = join(dirname(fileURLToPath(import.meta.url)), 'dist')
+const OUT = join(dirname(fileURLToPath(import.meta.url)), 'html')
 const SITE = 'https://3kee.site'
 const LOGO = `${SITE}/email/3kee-logo.png` // app/public/email/3kee-logo.png, served by the website
 const CONTACT = 'contact@3kee.site'

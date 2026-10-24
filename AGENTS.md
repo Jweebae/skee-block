@@ -49,6 +49,10 @@ The approved visual identity source is:
 - Gallery photos carry a small white Skee logo watermark (bottom-right). Always produce the gallery WebP files with `photo-edits/make-gallery-webp.sh white`; never copy an unwatermarked image into `app/src/assets/gallery/`.
 - AI-edited client photos go on the website only after the user explicitly approves each one. Until then the gallery tile stays empty; never fill it with a candidate, an interim crop or the original.
 
+## Emails
+
+- Client emails are written in `emails/build.mjs` and generated into `emails/html/` with `node emails/build.mjs`; never hand-edit the generated files. In emails the brand name is **3kee** only. The email logo is `app/public/email/3kee-logo.png` on the live site.
+
 ## Git and GitHub
 
 - The repository is `Jweebae/skee-block` (PUBLIC, needed for free GitHub Pages); its root is the `website project` folder. Every push to `main` builds and deploys the live site at https://3kee.site/ (the older github.io address redirects there), so keep `main` building. Because the repository and these notes are public, never write private information into any tracked file or commit message: no private phone numbers, private addresses, coordinates, client names, secrets, or anything about the owner's private identity beyond what is already there. After meaningful work: update PROJECT_CONTEXT.md, run `npm run build` and `npm run lint` in `app/`, then commit and `git push` so the other agent sees your work. Pull first (`git pull --rebase`) if the other agent may have pushed.
