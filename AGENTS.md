@@ -49,6 +49,16 @@ The approved visual identity source is:
 - Gallery photos carry a small white Skee logo watermark (bottom-right). Always produce the gallery WebP files with `photo-edits/make-gallery-webp.sh white`; never copy an unwatermarked image into `app/src/assets/gallery/`.
 - AI-edited client photos go on the website only after the user explicitly approves each one. Until then the gallery tile stays empty; never fill it with a candidate, an interim crop or the original.
 
+## Parallel coordination — required by the user
+
+- The user explicitly authorized ChatGPT and Claude Code to work in parallel and keep one another updated. Use this file for persistent rules and PROJECT_CONTEXT.md for current progress; never assume the other agent sees chat messages.
+- Before each new work item or resumed work period, re-read these files and inspect `git status` and recent commits. Fetch/pull when needed and safe; never rebase, stash, reset or discard another agent's uncommitted work automatically.
+- Before editing, add or update a short in-progress entry in PROJECT_CONTEXT.md identifying the agent, task, intended files, and any dependencies. Do not claim another agent's work is finished or reserve future tasks indefinitely.
+- Keep concurrent work in different files where possible. If another agent has active edits in the same files, defer the conflicting edits and coordinate the scope through the shared notes (or a directly authorized messaging channel when one is available). Do not overwrite the other agent's changes.
+- Update the shared notes after meaningful changes and before stopping, including incomplete work: files changed, checks actually run, database/function/deployment changes, pending decisions and the exact next action. Never put secrets or private account information in these public files.
+- Commit only files belonging to the current task. Sync completed work to GitHub under the existing checks/deployment rules, and inspect new changes again before starting the next task. Shared notes are not a transactional file lock; recheck before writing.
+- Direct delivery/acknowledgment by the other agent must not be claimed unless it actually happened. Neither agent can promise continuous background monitoring without an explicitly configured mechanism.
+
 ## Emails
 
 - Client emails are written in `emails/build.mjs` and generated into `emails/html/` with `node emails/build.mjs`; never hand-edit the generated files. In emails the brand name is **3kee** only. The email logo is `app/public/email/3kee-logo.png` on the live site.
