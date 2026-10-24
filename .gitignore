@@ -15,3 +15,9 @@ photo-edits/source/
 photo-edits/enhanced/
 photo-edits/review/*.png
 photo-edits/review/*.jpg
+# Any photo working folder: raw client photos and unapproved candidates are never uploaded.
+photo-edits/*/source/
+photo-edits/*/review/*.png
+photo-edits/*/review/*.jpg
+photo-edits/*/review/*.jpeg
+photo-edits/*/review/*.webp
