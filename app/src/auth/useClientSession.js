@@ -62,7 +62,9 @@ export default function useClientSession() {
   const user = session?.user ?? null
   const profileComplete = user?.user_metadata?.profile_complete === true
   // True right after a forgotten-password check (Google or emailed code): the next step is a new password.
-  const choosingPassword = Boolean(user) && resetting
+  // Only for finished accounts: a brand-new account reached through "Forgot your password?" chooses its first
+  // password in the finish-account form instead, and is never asked to change it.
+  const choosingPassword = Boolean(user) && resetting && profileComplete
 
   // reset = the client forgot their password: Google must ask for their login again, which proves they own the account.
   async function startGoogle({ reset = false } = {}) {
@@ -97,6 +99,7 @@ export default function useClientSession() {
     if (!accepted) throw new Error('Please read and accept the privacy notice to create your account.')
     const { data, error: problem } = await supabase.auth.updateUser({ password, data: { first_name: first, last_name: last, profile_complete: true, privacy_version: PRIVACY_VERSION, privacy_accepted_at: new Date().toISOString() } })
     if (problem) throw new Error('Your account could not be saved. Choose a different password, or try again in a moment.')
+    storeReset(false); setResetting(false)
     setSession(current => current && { ...current, user: data.user })
     setNotice('Your account is ready.')
     // The welcome email is a nice-to-have: the send-email function sends it once per account; failures stay silent.
