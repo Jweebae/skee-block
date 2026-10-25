@@ -105,3 +105,25 @@ export function previewSlots(hours, dateId, duration) {
   }
   return slots
 }
+
+// "Open now · until 20:00", "Today · 10:00", "Tomorrow · 10:00" or "Saturday · 10:00", in M'Sila time (UTC+1, no DST).
+export function nextOpening(hours, now = Date.now()) {
+  const local = new Date(now + 3600000)
+  const minute = local.getUTCHours() * 60 + local.getUTCMinutes()
+  for (let offset = 0; offset < 8; offset++) {
+    const day = hours.find(row => row.weekday === (local.getUTCDay() + offset) % 7)
+    if (!day?.open) continue
+    const start = timeInMinutes(day.start), end = timeInMinutes(day.end)
+    const breakStart = timeInMinutes(day.breakStart), breakEnd = timeInMinutes(day.breakEnd)
+    if (offset === 0) {
+      if (minute >= end) continue
+      if (minute >= start) {
+        if (Number.isFinite(breakStart) && minute >= breakStart && minute < breakEnd) return `Today · back at ${day.breakEnd}`
+        return `Open now · until ${Number.isFinite(breakStart) && minute < breakStart ? day.breakStart : day.end}`
+      }
+      return `Today · ${day.start}`
+    }
+    return `${offset === 1 ? 'Tomorrow' : WEEKDAYS[day.weekday]} · ${day.start}`
+  }
+  return 'See weekly hours'
+}

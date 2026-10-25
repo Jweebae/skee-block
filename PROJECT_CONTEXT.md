@@ -677,6 +677,13 @@ The user confirmed Google sign-in worked and asked for a proper sign-up (first/l
 - Checked: build and lint pass; headless test 5/5 for the signed-out page (opens at #account, asks to sign in, Sign in opens the window, Home closes it). The signed-in dashboard needs a real client account to check; not yet seen with real data.
 - Not built yet from board 05: message inbox (left out), review button (phase 4), delete account (later).
 
+## Homepage content and owner state — 2026-10-25 (Claude Code)
+
+- Brand story placeholder replaced with Skee's own words exactly as the user supplied them (two paragraphs, casual spelling kept on purpose; offer a tidied version only if asked). The existing "The room is quiet…" paragraph stays after it.
+- Hero "Next opening" now computed from the saved working hours in M'Sila time (`nextOpening` in `app/src/settings/studioSettings.js`, refreshed every minute): "Open now · until …", "Today · back at …" during the break, "Today · 10:00", "Tomorrow · 10:00" or the weekday. Tested with six times.
+- Remaining homepage placeholders: the three review cards (filled by approved reviews in phase 4).
+- Owner state on 2026-10-25: `studio_admins` is empty (both earlier owner accounts were deleted by the user); only one account exists (the user's own, Google, not an owner). The admin page is unreachable until an owner is added by SQL (Owners section needs an existing owner). The user asked for a second owner account; agents must not create accounts or set passwords: the person signs up on the site themselves, then an owner row is added.
+
 ## Working continuity
 
 Two AI agents work on this project on this Mac: ChatGPT (desktop Work/Codex) and Claude Code (VS Code extension). Both edit this same local application and share memory only through `AGENTS.md` and this file. Do not replace the project with a different site builder. Maintain this file incrementally after meaningful milestones, record unfinished work before stopping, and update AGENTS.md when persistent rules change.

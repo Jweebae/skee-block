@@ -10,6 +10,7 @@ import BookingFlow from './booking/BookingFlow'
 import { clearPendingBooking, hasPendingBooking } from './booking/bookingDraft'
 import { BASE_CUT_PRICE } from './booking/catalog'
 import useStudioSettings from './settings/useStudioSettings'
+import { nextOpening } from './settings/studioSettings'
 import { STUDIO_PHONE, STUDIO_AREA, WHATSAPP_URL } from './settings/studioContact'
 import AdminGate from './admin/AdminGate'
 import useClientSession from './auth/useClientSession'
@@ -34,6 +35,11 @@ export default function App() {
   const openDays = settings.hours.filter(item => item.open)
   const hoursSummary = openDays.length === 0 ? 'Closed this week' : openDays.length === 6 && !settings.hours[5].open && openDays.every(item => item.start === openDays[0].start && item.end === openDays[0].end) ? `Sat–Thu · ${openDays[0].start}–${openDays[0].end}` : `${openDays.length} open days · See weekly hours`
   const friday = settings.hours[5]
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 60000)
+    return () => clearInterval(timer)
+  }, [])
   const [menuOpen, setMenuOpen] = useState(false)
   const [action, setAction] = useState('booking')
   const dialogRef = useRef(null)
@@ -214,7 +220,7 @@ export default function App() {
                   Next opening
                 </span>
                 <span className="text-small">
-                  Today · [time]
+                  {nextOpening(settings.hours, now)}
                 </span>
               </div>
               <div className="fact-item">
@@ -385,7 +391,10 @@ export default function App() {
             </div>
             <div className="reveal story-paragraphs">
               <p className="margin-zero">
-                [Brand story — two short paragraphs in Skee's own words: where he learned, why M'Sila, what "the Block" means to him.]
+                Hello, Skee is speaking: the block is made to be a safe place for every man that likes to truly take care of himself.
+              </p>
+              <p className="margin-zero">
+                why MSila you may ask? its pretty simple cause NO ONE has the skills needed to bless everyone's head and i ain't going nowhere. the ice producer will always be here to provide you with topshelf haircare
               </p>
               <p className="margin-zero">
                 The room is quiet, the music is low, the tools are laid out before you sit. Nobody waits on a bench — your time is booked, and it's held for you.
