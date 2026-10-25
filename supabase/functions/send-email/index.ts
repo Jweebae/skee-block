@@ -53,6 +53,9 @@ Deno.serve(async req => {
 
   const apiKey = Deno.env.get('RESEND_API_KEY')
   if (!apiKey) return reply(req, 500, { error: 'email_not_configured' })
+  // The owner can switch client emails off in admin → Notifications.
+  const { data: studio } = await admin.from('studio_private').select('client_emails').eq('id', 'main').maybeSingle()
+  if (studio?.client_emails === false) return reply(req, 200, { sent: false, reason: 'emails_off' })
   try {
     const { subject, html } = await render('welcome', { first_name: String(user.user_metadata?.first_name ?? '').trim() || 'there' })
     const sent = await fetch('https://api.resend.com/emails', {

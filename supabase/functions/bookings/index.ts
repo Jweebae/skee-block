@@ -191,14 +191,22 @@ async function location(db: SupabaseClient) {
   return data ?? { location_url: null, location_note: null }
 }
 
+// The owner's switches in admin → Notifications (table studio_private).
+async function switches(db: SupabaseClient) {
+  const { data } = await db.from('studio_private').select('client_emails, owner_alerts').eq('id', 'main').maybeSingle()
+  return { clientEmails: data?.client_emails !== false, ownerAlerts: data?.owner_alerts !== false }
+}
+
 // Sends one email about a booking at most once per kind, and records it on the booking.
 async function notifyClient(db: SupabaseClient, booking: any, template: string, kind: string) {
   if (!booking.client_email || booking.emails?.[kind]) return
+  if (!(await switches(db)).clientEmails) return
   const place = ['booking-confirmed', 'booking-reminder'].includes(template) ? (await location(db)).location_url ?? undefined : undefined
   const ok = await sendEmail([booking.client_email], template, emailValues(booking, place), `${kind}-${booking.id}-${booking.updated_at}`)
   if (ok) await db.from('bookings').update({ emails: { ...booking.emails, [kind]: new Date().toISOString() } }).eq('id', booking.id)
 }
 async function notifyOwners(db: SupabaseClient, booking: any, template: string, kind: string) {
+  if (!(await switches(db)).ownerAlerts) return
   await sendEmail(await ownerEmails(db), template, emailValues(booking), `${kind}-${booking.id}-${booking.updated_at}`)
 }
 
