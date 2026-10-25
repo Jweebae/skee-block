@@ -241,3 +241,5 @@ button.card{text-align:left;width:100%}
 .service-card-wrap{position:relative;display:grid;min-width:0}
 .has-cut-photos{position:relative;overflow:hidden}
 .service-card-photos{position:absolute;right:24px;bottom:76px}
+.mobile-account{display:none}
+@media(max-width:760px){.mobile-account{position:absolute;right:76px;top:18px;display:flex;align-items:center;justify-content:center;width:44px;height:44px;padding:0;border:0;background:none;cursor:pointer}}

@@ -12,6 +12,7 @@ import { callAccount, USERNAME_PATTERN } from '../lib/accountApi'
 import useClientProfile, { announceProfileChange } from './useClientProfile'
 import ProfileNudge from './ProfileNudge'
 import ProfilePhoto from './ProfilePhoto'
+import HeaderAvatar from './HeaderAvatar'
 import './AccountPage.css'
 
 // The client's own dashboard (design board 05): upcoming appointment, history, profile and notifications.
@@ -212,15 +213,15 @@ export default function AccountPage({ client, settings, onClose, onBook, onSignI
   const counts = completed.reduce((all, item) => ({ ...all, [item.service_id]: (all[item.service_id] || 0) + 1 }), {})
   const usualId = Object.keys(counts).sort((a, b) => counts[b] - counts[a])[0]
   const usual = completed.find(item => item.service_id === usualId)
-  const since = client.user ? new Date(client.user.created_at).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }) : ''
+  const since = client.user?.created_at ? new Date(client.user.created_at).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }) : ''
 
   return <div className="acct-page">
     <header className="acct-header"><a href="#top" className="acct-brand" onClick={event => { event.preventDefault(); onClose() }}><img src={logo} alt="SKEE" /><span>My account</span></a>
-      <div className="acct-header-actions"><button type="button" className="acct-btn acct-btn-primary" onClick={() => onBook(usual?.service_id || null)}>{completed.length ? 'Book again' : 'Book the chair'}</button><button type="button" className="acct-btn" onClick={onClose}>Home</button></div></header>
+      <div className="acct-header-actions">{client.user && <HeaderAvatar user={client.user} status={profileStatus} size={40} />}<button type="button" className="acct-btn acct-btn-primary" onClick={() => onBook(usual?.service_id || null)}>{completed.length ? 'Book again' : 'Book the chair'}</button><button type="button" className="acct-btn" onClick={onClose}>Home</button></div></header>
     <main className="acct-main">
       {!client.ready ? <p className="acct-muted">Checking your sign-in…</p> : !client.user || !client.profileComplete ? <section className="acct-signed-out"><h1 className="serif">Your place at the <em>Block</em>.</h1><p>Sign in to see your appointments and history.</p><button type="button" className="acct-btn acct-btn-primary" onClick={onSignIn}>Sign in</button></section> : <>
         <div className="acct-hello">
-          <div><span className="acct-label">Signed in · client since {since}</span><h1 className="serif">Salam, <em>{name || 'friend'}</em>.</h1></div>
+          <div><span className="acct-label">Signed in{since ? ` · client since ${since}` : ''}</span><h1 className="serif">Salam, <em>{name || 'friend'}</em>.</h1></div>
           <dl className="acct-stats"><div><dt>Visits</dt><dd className="serif">{completed.length}</dd></div><div><dt>Usual</dt><dd>{usual?.service_name || '—'}</dd></div></dl>
         </div>
         <ProfileNudge user={client.user} status={profileStatus} variant="account" />

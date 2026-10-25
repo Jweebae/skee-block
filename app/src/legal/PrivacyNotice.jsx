@@ -1,14 +1,15 @@
 import { useEffect } from 'react'
 import logo from '../assets/skee-logo-white.svg'
 import { PRIVACY_CONTACT, PRIVACY_UPDATED } from './privacy'
+import HeaderAvatar from '../auth/HeaderAvatar'
 import './PrivacyNotice.css'
 
 // Plain-language notice. Describe only what the site actually does; update it with every data-related feature.
-export default function PrivacyNotice() {
+export default function PrivacyNotice({ client, profileStatus }) {
   useEffect(() => { window.scrollTo(0, 0) }, [])
   const mail = <a href={`mailto:${PRIVACY_CONTACT}`}>{PRIVACY_CONTACT}</a>
   return <main className="privacy-page">
-    <a className="privacy-head" href="#top"><img src={logo} alt="SKEE" /><span>Privacy</span></a>
+    <a className="privacy-head" href="#top"><img src={logo} alt="SKEE" /><span>Privacy</span>{client?.user && <HeaderAvatar user={client.user} status={profileStatus} size={32} className="privacy-avatar" />}</a>
     <article className="privacy-body">
       <span className="lbl">Skee Block · 3kee.site</span>
       <h1 className="serif">Privacy notice.</h1>

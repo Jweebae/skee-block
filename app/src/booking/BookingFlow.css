@@ -140,3 +140,5 @@
 .booking-error{margin:16px 0 0;padding:14px 18px;border:1px solid #D9776A66;background:#D9776A0D;color:#E39A8E;font-size:14px;line-height:1.5}
 .booking-service.has-cut-photos{overflow:hidden}
 .booking-service-photos{position:absolute;right:16px;bottom:16px}
+.booking-avatar{margin-left:auto}
+.booking-avatar+.booking-close{margin-left:0}

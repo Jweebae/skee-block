@@ -17,6 +17,7 @@ import useClientSession from './auth/useClientSession'
 import ClientAccount from './auth/ClientAccount'
 import AccountPage from './auth/AccountPage'
 import useClientProfile from './auth/useClientProfile'
+import HeaderAvatar from './auth/HeaderAvatar'
 import PrivacyNotice from './legal/PrivacyNotice'
 import { CutHoverPhotos, CutPhotosButton } from './booking/CutPhotos'
 
@@ -136,7 +137,7 @@ export default function App() {
   }
 
   if (isAdmin) return <AdminGate settings={settings} storageError={storageError} onSave={saveSettings} />
-  if (isPrivacy) return <PrivacyNotice />
+  if (isPrivacy) return <PrivacyNotice client={client} profileStatus={profileStatus} />
 
   return (
     <div onClick={handleAction}>
@@ -168,7 +169,7 @@ export default function App() {
           </nav>
           <div className="desktop-actions header-actions">
             <button className="btn btn-ghost button-sign-in" data-action="account" type="button">
-              {client.user ? 'Account' : 'Sign in'}{client.user && profileStatus.loaded && profileStatus.percent < 100 && <span className="header-account-dot" aria-label={`Profile ${profileStatus.percent}% complete`} />}
+              {client.user && <HeaderAvatar user={client.user} status={profileStatus} size={28} />}{client.user ? 'Account' : 'Sign in'}
             </button>
             <button className="btn btn-bone button-book" data-action="booking" type="button">
               Book
@@ -176,7 +177,8 @@ export default function App() {
           </div>
         </div>
       <button type="button" className="mobile-menu-toggle" aria-label={menuOpen ? 'Close navigation' : 'Open navigation'} aria-expanded={menuOpen} aria-controls="mobile-navigation" onClick={() => setMenuOpen(!menuOpen)}><span /><span /></button>
-      {menuOpen && <nav id="mobile-navigation" className="mobile-navigation" aria-label="Mobile navigation" onClick={() => setMenuOpen(false)}><a href="#services">Services</a><a href="#story">The Block</a><a href="#reviews">Reviews</a><a href="#visit">Visit</a><button data-action="account">Sign in</button></nav>}
+      {client.user && <button type="button" className="mobile-account" data-action="account" aria-label="My account"><HeaderAvatar user={client.user} status={profileStatus} size={36} /></button>}
+      {menuOpen && <nav id="mobile-navigation" className="mobile-navigation" aria-label="Mobile navigation" onClick={() => setMenuOpen(false)}><a href="#services">Services</a><a href="#story">The Block</a><a href="#reviews">Reviews</a><a href="#visit">Visit</a><button data-action="account">{client.user ? 'My account' : 'Sign in'}</button></nav>}
     </header>
       <main id="main-content">
       <section id="top" className="hero hero-frame">

@@ -7,6 +7,7 @@ import PhoneField from '../lib/PhoneField'
 import WhatsAppVerify from '../auth/WhatsAppVerify'
 import { CutHoverPhotos, CutPhotosButton } from './CutPhotos'
 import ProfileNudge from '../auth/ProfileNudge'
+import HeaderAvatar from '../auth/HeaderAvatar'
 import { announceProfileChange } from '../auth/useClientProfile'
 import { localDzPart, normalizeDzMobile, PHONE_HINT } from '../lib/phone'
 import logo from '../assets/skee-logo-white.svg'
@@ -154,6 +155,7 @@ export default function BookingFlow({ settings, initialServiceId, onClose, clien
         <div className="booking-header-inner">
           <button className="booking-brand" onClick={onClose} aria-label="Back to Skee Block home"><img src={logo} alt="SKEE" /><span /><span>Book the chair</span></button>
           {!previewDone && <nav aria-label="Booking progress"><ol className="booking-steps">{STEPS.map((label, index) => <li key={label} aria-current={index === step ? 'step' : undefined}><button disabled={index > step} onClick={() => setStep(index)}><span className="booking-step-number">{index < step ? <Check /> : index + 1}</span><span className="booking-step-label">{label}</span></button></li>)}</ol></nav>}
+          {client?.user && <HeaderAvatar user={client.user} status={profileStatus} size={32} className="booking-avatar" />}
           <button className="booking-close" onClick={onClose} aria-label="Close booking">×</button>
         </div>
         <div className="booking-progress" aria-hidden="true"><span style={{ width: `${previewDone ? 100 : (step + 1) * 25}%` }} /></div>

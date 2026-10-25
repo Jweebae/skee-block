@@ -39,3 +39,8 @@ section{scroll-margin-top:20px}
 .profile-nudge-banner .profile-nudge-ring{width:40px;height:40px}.profile-nudge-banner .profile-nudge-ring b{width:32px;height:32px;font-size:10px}
 @media(max-width:520px){.profile-nudge{flex-wrap:wrap}.profile-nudge-actions{width:100%;justify-content:flex-start;padding-left:68px}.profile-nudge-banner .profile-nudge-actions{padding-left:56px}}
 .header-account-dot{display:inline-block;width:7px;height:7px;margin-left:8px;border-radius:50%;background:#C9A96A;vertical-align:middle}
+.header-avatar{--size:32px;position:relative;display:inline-grid;place-items:center;flex:none;width:var(--size);height:var(--size);border-radius:50%;overflow:hidden;border:1px solid #6E6B66;background:#1C1C1C;color:#C9A96A;font:400 calc(var(--size) * .45)/1 'Bodoni Moda',Georgia,serif;vertical-align:middle}
+.header-avatar img{width:100%;height:100%;object-fit:cover}
+.header-avatar.is-incomplete{border:2px solid #C9A96A;box-shadow:0 0 0 2px #0B0B0B,0 0 0 3px #C9A96A55}
+.visually-hidden{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.button-sign-in .header-avatar{margin:-6px 10px -6px -6px}

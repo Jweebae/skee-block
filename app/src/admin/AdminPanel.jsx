@@ -8,6 +8,8 @@ import StudioDetails from './StudioDetails'
 import NotificationSettings from './NotificationSettings'
 import WhatsAppSettings from './WhatsAppSettings'
 import CutPhotosEditor from './CutPhotosEditor'
+import HeaderAvatar from '../auth/HeaderAvatar'
+import useClientProfile from '../auth/useClientProfile'
 import './AdminPanel.css'
 
 const SECTIONS = [ ['cuts', 'Cuts & preferences'], ['addons', 'Add-ons'], ['hours', 'Working hours'] ]
@@ -17,6 +19,9 @@ export default function AdminPanel({ settings, storageError, onSave, owner = nul
   const [draft, setDraft] = useState(() => structuredClone(settings))
   const [section, setSection] = useState(owner ? 'appointments' : 'cuts')
   const sections = owner ? OWNER_SECTIONS : SECTIONS
+  const ownerProfile = useClientProfile(owner?.user ?? null)
+  const ownerMeta = owner?.user?.user_metadata || {}
+  const ownerName = ownerMeta.first_name || String(ownerMeta.full_name || ownerMeta.name || '').split(' ')[0] || owner?.user?.email || 'Owner'
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const [discardOpen, setDiscardOpen] = useState(false)
@@ -121,7 +126,7 @@ export default function AdminPanel({ settings, storageError, onSave, owner = nul
   }
 
   return <div className="admin-page">
-    <header className="admin-header"><a href="#top" className="admin-brand" onClick={leave}><img src={logo} alt="SKEE" /><span>Studio admin</span></a><div className="admin-header-right"><a href="#top" onClick={leave}>View website ↗</a><div className="admin-owner"><span>S</span><div>Said<small>Owner · public name “Skee”</small></div></div>{owner && <button type="button" className="admin-outline" onClick={signOut}>Sign out</button>}</div></header>
+    <header className="admin-header"><a href="#top" className="admin-brand" onClick={leave}><img src={logo} alt="SKEE" /><span>Studio admin</span></a><div className="admin-header-right"><a href="#top" onClick={leave}>View website ↗</a>{owner?.user ? <div className="admin-owner"><HeaderAvatar user={owner.user} status={{ profile: ownerProfile.profile }} size={32} /><div>{ownerName}<small>Owner · {owner.user.email}</small></div></div> : <div className="admin-owner"><span>S</span><div>Said<small>Owner · public name “Skee”</small></div></div>}{owner && <button type="button" className="admin-outline" onClick={signOut}>Sign out</button>}</div></header>
     <div className="admin-shell">
       <nav className="admin-sidebar" aria-label="Admin sections">{sections.map(([id, label], index) => <button key={id} aria-current={section === id ? 'page' : undefined} onClick={() => { setSection(id); setMessage(''); setError('') }}><span>0{index + 1}</span>{label}</button>)}<div className="admin-sidebar-note"><span className="lbl">Studio settings</span><p>One base cut.<br />{formatPrice(BASE_CUT_PRICE)}.<br />Only extras add to the bill.</p></div></nav>
       <main className="admin-main">

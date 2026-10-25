@@ -725,6 +725,12 @@ The user confirmed Google sign-in worked and asked for a proper sign-up (first/l
 - Checked: build and lint pass; headless test 4/4 (privacy content, no dot when signed out); security advisors only list intended items. Not yet checked with a real signed-in client upload.
 - Phase 4 must add the review form's choice "Show my photo with my review" (stored in `reviews.show_photo`, default hidden).
 
+## Account avatar in every header — 2026-10-25 (Claude Code)
+
+- `app/src/auth/HeaderAvatar.jsx`: the signed-in person's photo (signed link) or initial, gold ring while the profile is under 100 %, "Signed in as …" title and screen-reader text. Shown in the homepage header inside the Account button (replaces the gold dot), as its own button next to the menu on phones (the phone menu says "My account" when signed in), in the booking header, the My account header and the privacy page header. The admin header shows the signed-in owner (photo or initial, first name, email) instead of the fixed "S · Said" badge, which stays only for the local preview without Supabase.
+- Checked with a fake, invalid local session in a headless browser: desktop, booking, account and privacy headers show the avatar; at 390 px the avatar sits between the logo and the menu button without overlap. My account no longer shows "client since Invalid Date" when a session lacks a creation date.
+- Testing note: another dev server listens on 127.0.0.1:5174 on this Mac; run `vite preview --host 127.0.0.1` on another port for production-build tests.
+
 ## Working continuity
 
 Two AI agents work on this project on this Mac: ChatGPT (desktop Work/Codex) and Claude Code (VS Code extension). Both edit this same local application and share memory only through `AGENTS.md` and this file. Do not replace the project with a different site builder. Maintain this file incrementally after meaningful milestones, record unfinished work before stopping, and update AGENTS.md when persistent rules change.
