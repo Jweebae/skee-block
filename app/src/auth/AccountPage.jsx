@@ -7,6 +7,7 @@ import { previewSlots } from '../settings/studioSettings'
 import { STUDIO_PHONE } from '../settings/studioContact'
 import PhoneField from '../lib/PhoneField'
 import { localDzPart, normalizeDzMobile, PHONE_HINT } from '../lib/phone'
+import WhatsAppVerify from './WhatsAppVerify'
 import './AccountPage.css'
 
 // The client's own dashboard (design board 05): upcoming appointment, history, profile and notifications.
@@ -158,6 +159,7 @@ function Preferences({ userId, profile, onSaved }) {
   return <form className="acct-box" onSubmit={save} aria-labelledby="acct-pref-title">
     <span id="acct-pref-title" className="acct-label">Profile & notifications</span>
     <label className="acct-field" htmlFor="acct-phone">WhatsApp number<PhoneField id="acct-phone" value={fields.phone} onChange={value => setFields(current => ({ ...current, phone: value }))} invalid={Boolean(fields.phone.trim()) && !normalizeDzMobile(fields.phone)} /><small id="acct-phone-hint" className="acct-muted">{PHONE_HINT}</small></label>
+    {profile?.phone && <WhatsAppVerify />}
     <fieldset className="acct-field"><legend>Reminders by</legend><div className="acct-tabs">{[['email', 'Email'], ['whatsapp', 'WhatsApp']].map(([id, label]) => <button key={id} type="button" aria-pressed={fields.reminder_channel === id} onClick={() => setFields(current => ({ ...current, reminder_channel: id }))}>{label}</button>)}</div></fieldset>
     {[['email_notifications', 'Email', 'Confirmations, changes and your appointment-day reminder'], ['rebook_nudges', 'Rebook nudges', 'A gentle note when your cut is due']].map(([key, title, hint]) => <label key={key} className="acct-switch"><span>{title}<small>{hint}</small></span><input type="checkbox" role="switch" checked={fields[key]} onChange={() => toggle(key)} /></label>)}
     <button type="submit" className="acct-btn acct-btn-primary" disabled={saving}>{saving ? 'Saving…' : 'Save preferences'}</button>

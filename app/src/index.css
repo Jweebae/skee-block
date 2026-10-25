@@ -10,3 +10,11 @@ img{max-width:100%}
 section{scroll-margin-top:20px}
 ::selection{background:#C9A96A;color:#0B0B0B}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+.wa-verify{display:grid;gap:10px;padding:16px 18px;border:1px solid #C9A96A66;background:#C9A96A0D;font-size:14px;line-height:1.5;color:#D9D5CE}
+.wa-verify p{margin:0}
+.wa-verify strong{color:#F2EFE9;font-weight:500}
+.wa-verify.is-verified{border-color:#9DBFA466;background:#9DBFA40D;color:#9DBFA4}
+.wa-verify-button{justify-self:start;display:inline-flex;align-items:center;min-height:44px;padding:0 18px;border:1px solid #C9A96A;border-radius:2px;background:transparent;color:#C9A96A;font:500 11px/1 'Inter Tight',sans-serif;letter-spacing:.14em;text-transform:uppercase;text-decoration:none;cursor:pointer}
+.wa-verify-button:focus-visible{outline:1px solid #C9A96A;outline-offset:2px}
+.wa-verify-hint{font-size:13px;color:#8E8B85}
+.wa-verify-error{color:#E39A8E}

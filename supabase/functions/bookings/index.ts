@@ -17,6 +17,7 @@ const MIN_NOTICE_MINUTES = 60
 const CLIENT_CANCEL_HOURS = 3
 const MAX_ACTIVE_PER_CLIENT = 2
 const LIVE = ['requested', 'confirmed']
+const GRAPH = 'https://graph.facebook.com/v22.0'
 
 class Problem extends Error {
   constructor(public status: number, public code: string) { super(code) }
@@ -193,21 +194,67 @@ async function location(db: SupabaseClient) {
 
 // The owner's switches in admin → Notifications (table studio_private).
 async function switches(db: SupabaseClient) {
-  const { data } = await db.from('studio_private').select('client_emails, owner_alerts').eq('id', 'main').maybeSingle()
-  return { clientEmails: data?.client_emails !== false, ownerAlerts: data?.owner_alerts !== false }
+  const { data } = await db.from('studio_private').select('client_emails, owner_alerts, whatsapp_messages').eq('id', 'main').maybeSingle()
+  return { clientEmails: data?.client_emails !== false, ownerAlerts: data?.owner_alerts !== false, whatsappMessages: data?.whatsapp_messages === true }
 }
 
-// Sends one email about a booking at most once per kind, and records it on the booking.
+// Automatic WhatsApp messages use templates approved by Meta (created from admin → WhatsApp). Meta charges for each one,
+// so they only go out while the owner's "Automatic WhatsApp messages" switch is on.
+const WA_TEMPLATES: Record<string, { name: string; params: (v: Record<string, string>) => string[] }> = {
+  'booking-received': { name: 'skee_request_received', params: v => [v.first_name, v.code, v.date, v.time] },
+  'booking-confirmed': { name: 'skee_booking_confirmed', params: v => [v.first_name, v.code, v.date, v.time, v.location_url] },
+  'booking-changed': { name: 'skee_booking_moved', params: v => [v.first_name, v.code, v.date, v.time] },
+  'booking-cancelled': { name: 'skee_booking_cancelled', params: v => [v.first_name, v.code, v.date, v.time] },
+  'booking-declined': { name: 'skee_request_declined', params: v => [v.first_name, v.code, v.date, v.time] },
+  'booking-reminder': { name: 'skee_day_reminder', params: v => [v.first_name, v.time, v.service, v.location_url] },
+  'owner-new-request': { name: 'skee_owner_new_request', params: v => [v.code, v.client_name, v.service, v.date, v.time] },
+  'owner-cancelled': { name: 'skee_owner_cancelled', params: v => [v.code, v.client_name, v.date, v.time] },
+}
+
+async function sendWhatsApp(db: SupabaseClient, to: string | null, template: string, values: Record<string, string>) {
+  const chosen = WA_TEMPLATES[template]
+  if (!chosen || !to) return false
+  const [{ data: config }, { data: secrets }] = await Promise.all([
+    db.from('whatsapp_config').select('phone_number_id').eq('id', 'main').maybeSingle(),
+    db.from('whatsapp_secrets').select('access_token').eq('id', 'main').maybeSingle(),
+  ])
+  if (!config?.phone_number_id || !secrets?.access_token) return false
+  try {
+    const sent = await fetch(`${GRAPH}/${config.phone_number_id}/messages`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${secrets.access_token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messaging_product: 'whatsapp', to: to.replace(/\D/g, ''), type: 'template', template: { name: chosen.name, language: { code: 'en' }, components: [{ type: 'body', parameters: chosen.params(values).map(text => ({ type: 'text', text: String(text || '-').slice(0, 900) })) }] } }),
+    })
+    if (!sent.ok) throw new Error(`whatsapp ${sent.status}: ${await sent.text()}`)
+    return true
+  } catch (problem) {
+    console.error('whatsapp failed', template, problem)
+    return false
+  }
+}
+
+// Sends each message about a booking at most once per kind (email and WhatsApp separately) and records it.
 async function notifyClient(db: SupabaseClient, booking: any, template: string, kind: string) {
-  if (!booking.client_email || booking.emails?.[kind]) return
-  if (!(await switches(db)).clientEmails) return
+  const flags = await switches(db)
+  const log = { ...(booking.emails ?? {}) }
+  const wantsEmail = flags.clientEmails && booking.client_email && !log[kind]
+  const wantsWhatsApp = flags.whatsappMessages && booking.client_phone && booking.reminder_channel === 'whatsapp' && !log[`wa_${kind}`]
+  if (!wantsEmail && !wantsWhatsApp) return
   const place = ['booking-confirmed', 'booking-reminder'].includes(template) ? (await location(db)).location_url ?? undefined : undefined
-  const ok = await sendEmail([booking.client_email], template, emailValues(booking, place), `${kind}-${booking.id}-${booking.updated_at}`)
-  if (ok) await db.from('bookings').update({ emails: { ...booking.emails, [kind]: new Date().toISOString() } }).eq('id', booking.id)
+  const values = emailValues(booking, place)
+  const now = new Date().toISOString()
+  if (wantsEmail && await sendEmail([booking.client_email], template, values, `${kind}-${booking.id}-${booking.updated_at}`)) log[kind] = now
+  if (wantsWhatsApp && await sendWhatsApp(db, booking.client_phone, template, values)) log[`wa_${kind}`] = now
+  if (JSON.stringify(log) !== JSON.stringify(booking.emails ?? {})) await db.from('bookings').update({ emails: log }).eq('id', booking.id)
 }
 async function notifyOwners(db: SupabaseClient, booking: any, template: string, kind: string) {
-  if (!(await switches(db)).ownerAlerts) return
-  await sendEmail(await ownerEmails(db), template, emailValues(booking), `${kind}-${booking.id}-${booking.updated_at}`)
+  const flags = await switches(db)
+  const values = emailValues(booking)
+  if (flags.ownerAlerts) await sendEmail(await ownerEmails(db), template, values, `${kind}-${booking.id}-${booking.updated_at}`)
+  if (flags.whatsappMessages) {
+    const { data } = await db.from('whatsapp_config').select('owner_alert_number').eq('id', 'main').maybeSingle()
+    if (data?.owner_alert_number) await sendWhatsApp(db, data.owner_alert_number, template, values)
+  }
 }
 
 // ---------- writes ----------

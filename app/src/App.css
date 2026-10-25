@@ -238,3 +238,6 @@ button.card{text-align:left;width:100%}
 .ticker-frame,.services-section,.reviews-section,.visit-section,.site-footer{position:relative;background:#0B0B0B}
 .ticker-frame{z-index:1}
 @media(max-width:760px){.brand-backdrop::after{background-size:80% auto}}
+.service-card-wrap{position:relative;display:grid;min-width:0}
+.has-cut-photos{position:relative;overflow:hidden}
+.service-card-photos{position:absolute;right:24px;bottom:76px}

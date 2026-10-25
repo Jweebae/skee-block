@@ -30,6 +30,15 @@ function integer(value, label, min, max) {
   return Number(value)
 }
 
+// Cut photos live in the public Supabase Storage bucket `cut-photos` (uploaded from admin → Cuts).
+const PHOTO_URL = /^https:\/\/[a-z0-9]+\.supabase\.co\/storage\/v1\/object\/public\/cut-photos\/[A-Za-z0-9._/-]+\.(webp|jpe?g)$/
+export const MAX_CUT_PHOTOS = 8
+function photoList(value, label) {
+  if (value === undefined) return []
+  if (!Array.isArray(value) || value.length > MAX_CUT_PHOTOS) throw new Error(`${label}: use up to ${MAX_CUT_PHOTOS} photos.`)
+  return [...new Set(value.filter(url => typeof url === 'string' && PHOTO_URL.test(url)))]
+}
+
 export function timeInMinutes(value) {
   if (typeof value !== 'string' || !/^([01]\d|2[0-3]):[0-5]\d$/.test(value)) return NaN
   const [hour, minute] = value.split(':').map(Number)
@@ -50,7 +59,7 @@ export function validateSettings(input) {
   const services = input.services.map(item => {
     const base = identity(item, 'Cut')
     if (!Array.isArray(item.preferences) || item.preferences.length > 30) throw new Error(`${base.name}: use up to 30 preferences.`)
-    return { ...base, duration: integer(item.duration, `${base.name} duration`, 5, 240), category: text(item.category || 'Cut', 'Category', 60), preferences: [...new Set(item.preferences.map(value => text(value, 'Preference', 100, false)).filter(Boolean))] }
+    return { ...base, photos: photoList(item.photos, base.name), duration: integer(item.duration, `${base.name} duration`, 5, 240), category: text(item.category || 'Cut', 'Category', 60), preferences: [...new Set(item.preferences.map(value => text(value, 'Preference', 100, false)).filter(Boolean))] }
   })
   const addons = input.addons.map(item => {
     const base = identity(item, 'Add-on')

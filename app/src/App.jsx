@@ -17,6 +17,7 @@ import useClientSession from './auth/useClientSession'
 import ClientAccount from './auth/ClientAccount'
 import AccountPage from './auth/AccountPage'
 import PrivacyNotice from './legal/PrivacyNotice'
+import { CutHoverPhotos, CutPhotosButton } from './booking/CutPhotos'
 
 
 function ChatIcon() {
@@ -361,12 +362,13 @@ export default function App() {
           </p>
         </div>
         <div className="services-grid card-grid">
-          {visibleServices.map(item => <button key={item.id} className={`card reveal ${item.id === 'ritual' ? 'service-card-featured' : 'service-card'}`} data-action="booking" data-service={item.id} type="button">
+          {visibleServices.map(item => <div key={item.id} className="service-card-wrap"><button className={`card reveal ${item.id === 'ritual' ? 'service-card-featured' : 'service-card'}${item.photos?.length ? ' has-cut-photos' : ''}`} data-action="booking" data-service={item.id} type="button">
+            <CutHoverPhotos photos={item.photos || []} name={item.name} />
             <div className="lbl card-topline"><span>{item.duration} min</span><span className={['signature', 'ritual'].includes(item.id) ? 'text-gold' : ''}>{item.category}</span></div>
             <div className="serif service-title">{item.id === 'ritual' && item.name === 'The Block Ritual' ? <>The Block <em>Ritual</em></> : item.name}</div>
             <div className="service-description">{item.description}</div>
             <div className="card-bottomline"><span className={item.id === 'ritual' ? 'service-price-featured' : 'service-price'}>{BASE_CUT_PRICE} DA</span><span className="arrow lbl text-bone">Book →</span></div>
-          </button>)}
+          </button><CutPhotosButton photos={item.photos || []} name={item.name} className="service-card-photos" /></div>)}
         </div>
         {!visibleServices.length && <p className="section-intro">The menu is being updated. Contact Skee to arrange a visit.</p>}
         <p className="lbl placeholder-note">

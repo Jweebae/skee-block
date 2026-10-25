@@ -5,15 +5,13 @@ import { supabase } from '../lib/supabase'
 const SWITCHES = [
   ['client_emails', 'Emails to clients', 'Welcome, request received, confirmed, declined, moved, cancelled, and later the appointment-day reminder and review request.'],
   ['owner_alerts', 'Alerts to owners', 'An email to every owner when a client sends a request or cancels.'],
-  ['whatsapp_verification', 'WhatsApp number verification', 'Clients confirm their WhatsApp number by sending a code to the studio’s business number. Not set up yet: it needs the WhatsApp Business Platform connection first.'],
 ]
-const READY = { whatsapp_verification: false } // switches that cannot be turned on yet
 const stamp = () => new Date().toISOString()
 
 async function fetchSwitches() {
-  const { data, error } = await supabase.from('studio_private').select('client_emails, owner_alerts, whatsapp_verification').eq('id', 'main').maybeSingle()
+  const { data, error } = await supabase.from('studio_private').select('client_emails, owner_alerts').eq('id', 'main').maybeSingle()
   if (error) return { error: 'The notification settings could not be loaded.' }
-  return { values: { client_emails: data?.client_emails !== false, owner_alerts: data?.owner_alerts !== false, whatsapp_verification: data?.whatsapp_verification === true } }
+  return { values: { client_emails: data?.client_emails !== false, owner_alerts: data?.owner_alerts !== false } }
 }
 
 export default function NotificationSettings({ headingRef }) {
@@ -38,12 +36,11 @@ export default function NotificationSettings({ headingRef }) {
   }
 
   return <>
-    <div className="admin-title-row"><div><span className="lbl">Skee Block · Studio controls</span><h1 className="serif" ref={headingRef} tabIndex={-1}>Notifications</h1><p>Turn each kind of message on or off. Changes apply to the next message straight away. Account emails (sign-in codes, password resets) always stay on, because clients need them to sign in.</p></div></div>
+    <div className="admin-title-row"><div><span className="lbl">Skee Block · Studio controls</span><h1 className="serif" ref={headingRef} tabIndex={-1}>Notifications</h1><p>Turn each kind of message on or off. Changes apply to the next message straight away. Account emails (sign-in codes, password resets) always stay on, because clients need them to sign in. WhatsApp switches are in the WhatsApp section.</p></div></div>
     {values === null && !error ? <p className="admin-empty">Loading…</p> : values && <div className="admin-editor-list">{SWITCHES.map(([key, title, hint]) => {
-      const locked = READY[key] === false && !values[key]
       return <section key={key} className="admin-editor-card admin-switch-row" aria-label={title}>
         <div><h3>{title}</h3><p>{hint}</p></div>
-        <button type="button" role="switch" aria-checked={values[key]} className={`admin-switch${values[key] ? ' is-on' : ''}`} disabled={saving === key || locked} onClick={() => flip(key)}><span aria-hidden="true" /><b>{locked ? 'Not set up' : values[key] ? 'On' : 'Off'}</b></button>
+        <button type="button" role="switch" aria-checked={values[key]} className={`admin-switch${values[key] ? ' is-on' : ''}`} disabled={saving === key} onClick={() => flip(key)}><span aria-hidden="true" /><b>{values[key] ? 'On' : 'Off'}</b></button>
       </section>
     })}</div>}
     {error && <p className="admin-error" role="alert">{error}</p>}{message && <p className="admin-message" role="status">{message}</p>}

@@ -4,6 +4,8 @@ import { supabase } from '../lib/supabase'
 import { callBookings, freeTimes, whatsappLink } from '../lib/bookingsApi'
 import { readDraft, writeDraft } from './bookingDraft'
 import PhoneField from '../lib/PhoneField'
+import WhatsAppVerify from '../auth/WhatsAppVerify'
+import { CutHoverPhotos, CutPhotosButton } from './CutPhotos'
 import { localDzPart, normalizeDzMobile, PHONE_HINT } from '../lib/phone'
 import logo from '../assets/skee-logo-white.svg'
 import { BASE_CUT_PRICE, formatPrice, getPreviewDates } from './catalog'
@@ -163,13 +165,16 @@ export default function BookingFlow({ settings, initialServiceId, onClose, clien
             <p>Your appointment is under review by Skee. Skee usually replies within 10 minutes, and a copy of your request is on its way to {client?.user?.email}.<br />mwalf yripondi fi 10 minutes maximum</p>
             <div className="booking-lock"><span aria-hidden="true"><LockIcon /></span><div><h2 className="serif">Location stays private.</h2><p>Directions unlock once Skee confirms your appointment.</p></div></div>
             <a className="booking-primary" href={whatsappLink(STUDIO_PHONE, `Salam Skee, about booking ${result?.code} — `)} target="_blank" rel="noreferrer">Message Skee about {result?.code} ↗</a>
+            <WhatsAppVerify className="booking-wa-verify" />
             <div className="booking-complete-actions"><button className="booking-secondary" onClick={onOpenAccount}>See my appointments</button><button className="booking-secondary" onClick={onClose}>Back to home</button></div>
           </section> : <>
             <div className="booking-heading"><span className="lbl">Step {step + 1} of 4{step === 1 ? ' · optional' : ''}</span><h1 id="booking-title" className="serif" ref={headingRef} tabIndex={-1}>{TITLES[step]}</h1></div>
 
             {step === 0 && !services.length && <p className="booking-hint">The menu is being updated. Please contact Skee to arrange a visit.</p>}
-            {step === 0 && <fieldset className="booking-fieldset"><legend className="booking-sr-only">Choose one service</legend><div className="booking-service-grid">{services.map(item => <label key={item.id} className={`booking-service ${serviceId === item.id ? 'is-selected' : ''}`}>
+            {step === 0 && <fieldset className="booking-fieldset"><legend className="booking-sr-only">Choose one service</legend><div className="booking-service-grid">{services.map(item => <label key={item.id} className={`booking-service ${serviceId === item.id ? 'is-selected' : ''}${item.photos?.length ? ' has-cut-photos' : ''}`}>
               <input type="radio" name="service" value={item.id} checked={serviceId === item.id} onChange={() => selectService(item.id)} />
+              <CutHoverPhotos photos={item.photos || []} name={item.name} />
+              <CutPhotosButton photos={item.photos || []} name={item.name} className="booking-service-photos" />
               {serviceId === item.id && <span className="booking-selected-mark"><Check /></span>}
               <span className="lbl">{item.duration} min</span><span className="serif booking-service-title">{item.name}</span><span className="booking-option-description">{item.description}</span><span className="booking-option-price">{formatPrice(BASE_CUT_PRICE)}</span>
             </label>)}</div><p className="booking-hint">Every base cut is 800 DA. Only the extras you choose increase the bill.</p></fieldset>}
