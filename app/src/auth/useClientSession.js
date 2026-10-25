@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { PRIVACY_VERSION } from '../legal/privacy'
 import { callAccount } from '../lib/accountApi'
+import { announceProfileChange } from './useClientProfile'
 
 export const MIN_PASSWORD = 10
 const RESET_KEY = 'skee.client-reset' // non-secret marker: the client proved they own their email and is now choosing a new password
@@ -115,7 +116,8 @@ export default function useClientSession() {
     setSession(current => current && { ...current, user: data.user })
     setNotice('Your account is ready.')
     // No username chosen: create one from the name (failures stay silent; it can be set later in My account).
-    if (!String(username || '').trim()) callAccount('set_username', {}).catch(() => {})
+    if (!String(username || '').trim()) callAccount('set_username', {}).then(announceProfileChange, () => {})
+    else announceProfileChange()
     // The welcome email is a nice-to-have: the send-email function sends it once per account; failures stay silent.
     supabase.functions.invoke('send-email', { body: { template: 'welcome' } }).catch(() => {})
   }

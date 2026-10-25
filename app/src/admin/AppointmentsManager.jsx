@@ -10,6 +10,16 @@ import { formatDzMobile, normalizeDzMobile } from '../lib/phone'
 const REFRESH_MS = 30000
 const extrasText = booking => (booking.addons || []).map(item => item.typeName === 'Standard' ? item.name : `${item.name} (${item.typeName})`).join(', ')
 
+// Clients' optional profile photos (private bucket), as short-lived links keyed by client id.
+async function clientPhotos(bookings) {
+  const ids = [...new Set(bookings.map(item => item.client_id).filter(Boolean))]
+  if (!ids.length) return {}
+  const { data: profiles } = await supabase.from('client_profiles').select('user_id, avatar_path').in('user_id', ids).not('avatar_path', 'is', null)
+  if (!profiles?.length) return {}
+  const { data: links } = await supabase.storage.from('client-photos').createSignedUrls(profiles.map(row => row.avatar_path), 3600)
+  return Object.fromEntries(profiles.map((row, index) => [row.user_id, links?.[index]?.signedUrl]).filter(([, url]) => url))
+}
+
 async function fetchAppointments() {
   const since = new Date(Date.now() - 14 * 86400000).toISOString()
   const [{ data, error }, place] = await Promise.all([
@@ -17,7 +27,7 @@ async function fetchAppointments() {
     supabase.from('studio_private').select('location_url').eq('id', 'main').maybeSingle(),
   ])
   if (error) return { error: 'Appointments could not be loaded. Check your connection and try again.' }
-  return { bookings: data, locationUrl: place.data?.location_url || '', now: Date.now() }
+  return { bookings: data, locationUrl: place.data?.location_url || '', photos: await clientPhotos(data), now: Date.now() }
 }
 
 function whatsappMessages(booking, locationUrl) {
@@ -32,7 +42,7 @@ function whatsappMessages(booking, locationUrl) {
   return messages
 }
 
-function BookingCard({ booking, locationUrl, onAction, busy, now }) {
+function BookingCard({ booking, locationUrl, onAction, busy, now, photo }) {
   const [confirming, setConfirming] = useState('')
   const [moving, setMoving] = useState(false)
   const [moveTo, setMoveTo] = useState(() => algiersParts(booking.starts_at))
@@ -42,7 +52,7 @@ function BookingCard({ booking, locationUrl, onAction, busy, now }) {
   const act = (action, extra) => { setConfirming(''); onAction(booking, action, extra) }
   return <section className="admin-editor-card appt-card" data-status={booking.status} aria-label={`${booking.code} ${booking.client_name}`}>
     <div className="appt-head">
-      <div><span className="lbl">{dayLabel(booking.starts_at, { weekday: 'short', day: 'numeric', month: 'short' })} · {time} · {booking.duration_minutes} min</span><h3>{booking.client_name}</h3><p>{booking.service_name}{extrasText(booking) ? ` + ${extrasText(booking)}` : ''}</p></div>
+      <div className="appt-who">{photo ? <img className="appt-photo" src={photo} alt={`${booking.client_name}`} /> : <span className="appt-photo appt-initial" aria-hidden="true">{booking.client_name.charAt(0).toUpperCase()}</span>}<div><span className="lbl">{dayLabel(booking.starts_at, { weekday: 'short', day: 'numeric', month: 'short' })} · {time} · {booking.duration_minutes} min</span><h3>{booking.client_name}</h3><p>{booking.service_name}{extrasText(booking) ? ` + ${extrasText(booking)}` : ''}</p></div></div>
       <div className="appt-side"><span className={`appt-status appt-${booking.status}`}>{STATUS_LABELS[booking.status]}</span><strong>{formatPrice(booking.total_price)}</strong><small>{booking.code}{booking.source === 'walk_in' ? ' · walk-in' : ''}</small></div>
     </div>
     <dl className="appt-details">
@@ -108,7 +118,7 @@ function WalkInForm({ settings, onDone }) {
 }
 
 export default function AppointmentsManager({ settings, headingRef }) {
-  const [data, setData] = useState({ bookings: null, locationUrl: '', now: 0 })
+  const [data, setData] = useState({ bookings: null, locationUrl: '', photos: {}, now: 0 })
   const [version, setVersion] = useState(0)
   const [busy, setBusy] = useState(false)
   const [walkIn, setWalkIn] = useState(false)
@@ -144,7 +154,7 @@ export default function AppointmentsManager({ settings, headingRef }) {
   const upcoming = bookings.filter(item => item.status === 'confirmed' && new Date(item.starts_at).getTime() > now)
   const closed = bookings.filter(item => !['requested', 'confirmed'].includes(item.status) || (item.status === 'requested' && new Date(item.starts_at).getTime() <= now)).reverse()
   const days = [...new Set(upcoming.map(item => algiersParts(item.starts_at).date))]
-  const card = item => <BookingCard key={`${item.id}-${item.updated_at}`} booking={item} locationUrl={data.locationUrl} onAction={onAction} busy={busy} now={now} />
+  const card = item => <BookingCard key={`${item.id}-${item.updated_at}`} booking={item} locationUrl={data.locationUrl} onAction={onAction} busy={busy} now={now} photo={data.photos?.[item.client_id]} />
 
   return <>
     <div className="admin-title-row"><div><span className="lbl">Skee Block · Studio controls</span><h1 className="serif" ref={headingRef} tabIndex={-1}>Appointments</h1><p>Answer requests, close today’s visits, move or cancel appointments and add walk-ins. Clients get an email for every answer, move and cancellation. The list refreshes every 30 seconds.</p></div><button type="button" className="admin-save" onClick={() => setWalkIn(open => !open)}>{walkIn ? 'Close walk-in' : '+ Walk-in booking'}</button></div>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { MIN_PASSWORD } from './useClientSession'
 import { suggestUsername, USERNAME_PATTERN } from '../lib/accountApi'
+import ProfileNudge from './ProfileNudge'
 import './ClientAccount.css'
 
 const RESEND_AFTER = 60 // seconds; Supabase also refuses a new code for the same email within about a minute
@@ -155,7 +156,7 @@ function ChoosePassword({ client, intro, onCancel, onDone }) {
   </>
 }
 
-function SignedIn({ client }) {
+function SignedIn({ client, profileStatus }) {
   const [changing, setChanging] = useState(false)
   const meta = client.user.user_metadata || {}
   const name = meta.first_name || String(meta.full_name || meta.name || '').trim().split(/\s+/)[0] || ''
@@ -164,16 +165,17 @@ function SignedIn({ client }) {
     <h2 id="dialog-title" className="serif">{name ? `Hello, ${name}.` : 'Welcome back.'}</h2>
     <p>Signed in as {client.user.email}. Your appointments, history and preferences are in My account.</p>
     <Messages error={client.error} notice={client.notice} />
+    {profileStatus && <ProfileNudge user={client.user} status={profileStatus} onOpenAccount={() => { window.location.hash = 'account' }} />}
     {window.location.hash !== '#account' && <a className="btn btn-bone dialog-account-button" href="#account">Open my account</a>}
     <button type="button" className="btn btn-ghost dialog-account-button" onClick={() => setChanging(true)}>Change password</button>
     <button type="button" className="btn btn-ghost dialog-account-button" onClick={client.signOut}>Sign out</button>
   </>
 }
 
-export default function ClientAccount({ client, onLater }) {
+export default function ClientAccount({ client, onLater, profileStatus }) {
   if (!client.ready) return <><h2 id="dialog-title" className="serif">Your place at the Block.</h2><p role="status">Checking your sign-in…</p></>
   if (!client.user) return <SignedOut client={client} />
   if (client.choosingPassword) return <ChoosePassword client={client} intro="Thank you, your email is confirmed. Pick a new password for signing in." onCancel={client.cancelPasswordChange} />
   if (!client.profileComplete) return <FinishAccount client={client} onLater={onLater} />
-  return <SignedIn client={client} />
+  return <SignedIn client={client} profileStatus={profileStatus} />
 }

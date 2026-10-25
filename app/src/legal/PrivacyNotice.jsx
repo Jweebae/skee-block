@@ -23,17 +23,22 @@ export default function PrivacyNotice() {
         <li><strong>When you create an account:</strong> your first name, last name, email address and a password. The password is stored only as a secure, scrambled code by our account provider; nobody at Skee Block can see it. We also record the date you accepted this notice.</li>
         <li><strong>If you use Google to sign in:</strong> Google shares your name, email address and the link to your profile picture. We never receive your Google password or anything else from your Google account.</li>
         <li><strong>When you sign in:</strong> technical records needed to keep accounts secure, such as the time of sign-in and your device’s internet address (IP address), kept in our account provider’s logs.</li>
-        <li><strong>The booking preview:</strong> the cut, extras, time and notes you choose stay in your own browser and are not sent to us. Online bookings are not stored yet.</li>
+        <li><strong>Your username:</strong> chosen by you or created from your name, so you can sign in without typing your email.</li>
+        <li><strong>When you book:</strong> your WhatsApp number, the cut, extras, date and time you choose, your preferences and notes, how you want reminders, and the history of your appointments (requested, confirmed, completed, cancelled or missed).</li>
+        <li><strong>If you verify your WhatsApp number:</strong> the code message you send to our business number, so we can confirm the number is yours.</li>
+        <li><strong>Your profile photo, if you add one:</strong> it is optional and private. Skee sees it with your appointments so he knows who is in the chair. Other visitors only see it next to a review if you choose so when you write the review.</li>
         <li><strong>When you contact us:</strong> messages you send by email, WhatsApp or Instagram, so we can reply. WhatsApp and Instagram handle those conversations under their own privacy terms.</li>
       </ul>
       <p>We do not use advertising or analytics trackers, and we do not sell or rent your personal information.</p>
 
       <h2>Why we use it</h2>
-      <p>To create and run your account, recognise you when you sign in, help you recover a forgotten password, answer your messages and, once online booking opens, arrange your appointments. We do not use your information for advertising.</p>
+      <p>To create and run your account, recognise you when you sign in, help you recover a forgotten password, answer your messages, arrange your appointments, and send you confirmations, changes and reminders by email (and by WhatsApp if you choose it). Skee uses your optional profile photo only to know who is in the chair. We do not use your information for advertising, and we do not use automated face recognition.</p>
 
       <h2>Who helps us</h2>
       <ul>
-        <li><strong>Supabase</strong> runs our accounts and database, on servers in Paris, France.</li>
+        <li><strong>Supabase</strong> runs our accounts, database and photo storage, on servers in Paris, France.</li>
+        <li><strong>Resend</strong> sends our emails, such as booking confirmations and reminders.</li>
+        <li><strong>Meta (WhatsApp)</strong> carries WhatsApp messages between you and our business number when you verify your number or choose WhatsApp reminders.</li>
         <li><strong>GitHub Pages</strong> hosts the website and may log visitors’ IP addresses for security.</li>
         <li><strong>Google</strong> handles Google sign-in when you choose it, and delivers email sent to our 3kee.site addresses to our inbox.</li>
         <li><strong>Namecheap</strong> manages the 3kee.site domain and its email.</li>

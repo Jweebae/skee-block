@@ -9,6 +9,9 @@ import PhoneField from '../lib/PhoneField'
 import { localDzPart, normalizeDzMobile, PHONE_HINT } from '../lib/phone'
 import WhatsAppVerify from './WhatsAppVerify'
 import { callAccount, USERNAME_PATTERN } from '../lib/accountApi'
+import useClientProfile, { announceProfileChange } from './useClientProfile'
+import ProfileNudge from './ProfileNudge'
+import ProfilePhoto from './ProfilePhoto'
 import './AccountPage.css'
 
 // The client's own dashboard (design board 05): upcoming appointment, history, profile and notifications.
@@ -155,7 +158,7 @@ function Preferences({ userId, profile, onSaved }) {
     const { error: problem } = await supabase.from('client_profiles').upsert({ user_id: userId, ...fields, phone, updated_at: new Date().toISOString() })
     setSaving(false)
     if (problem) setError('Your preferences could not be saved. Try again.')
-    else onSaved('Preferences saved.')
+    else { announceProfileChange(); onSaved('Preferences saved.') }
   }
   return <form className="acct-box" onSubmit={save} aria-labelledby="acct-pref-title">
     <span id="acct-pref-title" className="acct-label">Profile & notifications</span>
@@ -176,7 +179,7 @@ function UsernameBox({ current, onSaved }) {
   async function save(event) {
     event.preventDefault()
     setSaving(true); setError('')
-    try { const data = await callAccount('set_username', { username: value }); setEditing(false); onSaved(`Your username is now ${data.username}.`) }
+    try { const data = await callAccount('set_username', { username: value }); setEditing(false); announceProfileChange(); onSaved(`Your username is now ${data.username}.`) }
     catch (problem) { setError(problem.message) } finally { setSaving(false) }
   }
   if (!editing) return <p>Username: <strong>{current || 'not set yet'}</strong> <button type="button" className="acct-link" onClick={() => { setValue(current || ''); setEditing(true) }}>{current ? 'Change' : 'Choose one'}</button></p>
@@ -192,6 +195,7 @@ export default function AccountPage({ client, settings, onClose, onBook, onSignI
   const [version, setVersion] = useState(0)
   const [message, setMessage] = useState('')
   const userId = client.user?.id
+  const profileStatus = useClientProfile(client.profileComplete ? client.user : null)
   useEffect(() => {
     if (!userId) return
     let active = true
@@ -219,6 +223,7 @@ export default function AccountPage({ client, settings, onClose, onBook, onSignI
           <div><span className="acct-label">Signed in · client since {since}</span><h1 className="serif">Salam, <em>{name || 'friend'}</em>.</h1></div>
           <dl className="acct-stats"><div><dt>Visits</dt><dd className="serif">{completed.length}</dd></div><div><dt>Usual</dt><dd>{usual?.service_name || '—'}</dd></div></dl>
         </div>
+        <ProfileNudge user={client.user} status={profileStatus} variant="account" />
         {message && <p className="acct-notice" role="status">{message}</p>}
         {state.error && <p className="acct-error" role="alert">{state.error}</p>}
         {state.bookings === null ? <p className="acct-muted">Loading your appointments…</p> : <>
@@ -226,6 +231,7 @@ export default function AccountPage({ client, settings, onClose, onBook, onSignI
             : <section className="acct-upcoming acct-upcoming-empty"><div className="acct-upcoming-main"><span className="acct-label">Upcoming</span><h2 className="serif">No appointment yet.</h2><p>Choose your cut, add the extras you like and pick your hour.</p><div className="acct-actions"><button type="button" className="acct-btn acct-btn-primary" onClick={() => onBook(usual?.service_id || null)}>Book the chair</button></div></div></section>}
           <History bookings={bookings} now={state.now} onChanged={changed} />
           <div className="acct-grid">
+            <section className="acct-box" aria-labelledby="acct-photo-title"><span id="acct-photo-title" className="acct-label">Profile photo</span><ProfilePhoto userId={userId} path={profileStatus.profile?.avatar_path} name={name} /><p className="acct-muted">Optional. Only Skee sees it. With a review, it is shown only if you choose.</p></section>
             <Preferences key={state.profile?.updated_at || 'new'} userId={userId} profile={state.profile} onSaved={changed} />
             <section className="acct-box" aria-labelledby="acct-sign-title"><span id="acct-sign-title" className="acct-label">Sign-in</span><p>Signed in as <strong>{client.user.email}</strong>.</p><UsernameBox key={state.profile?.username || 'none'} current={state.profile?.username} onSaved={changed} /><p className="acct-muted">Sign in with your email, your username or Google.</p><div className="acct-actions"><button type="button" className="acct-btn" onClick={onSignIn}>Change password</button><button type="button" className="acct-btn" onClick={async () => { await client.signOut(); onClose() }}>Sign out</button></div><p className="acct-muted">Your data is handled as described in the <a href="#privacy">privacy notice</a>.</p></section>
           </div>

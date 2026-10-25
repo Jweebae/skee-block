@@ -715,6 +715,16 @@ The user confirmed Google sign-in worked and asked for a proper sign-up (first/l
 - My account: Sign-in box shows the username with Change / Choose one.
 - Checked: function refuses an unknown username with `wrong_login` five times, then `too_many_attempts`; headless test 4/4 (label, refusal message, forgot panel, code needs email). Build and lint pass. The owner login page (`#admin`) still uses email only.
 
+## Profile completeness and client photos — 2026-10-25 (Claude Code)
+
+- Migration `20261025021743_client_profile_photos` (declined through the MCP; run by the user in the SQL editor, "Success"; re-runnable): `client_profiles.avatar_path` (client column grant; insert/update policies require the path to sit in the client's own folder), `reviews.show_photo` (default false: other visitors see a reviewer's photo only if the client chooses; owners always can), private bucket `client-photos` (folder = user id; clients manage their own files; clients and owners can view; signed URLs). Checked afterwards: columns, private bucket, 4 storage policies, clients still cannot set `phone_verified_at`.
+- Completeness (`auth/useClientProfile.js`): account 50 %, username 10 %, WhatsApp number 20 % (10 + 10 for verified while verification is on), photo 20 %. A new client is about 60 %, 80 % after the first booking. Changes call `announceProfileChange()` so every view refreshes.
+- Nudges (`auth/ProfileNudge.jsx`, "Later" hides for 3 days in localStorage): account window after sign-up, booking review step (photo step only) and booking success screen (banner), My account (always, with a Profile photo box `auth/ProfilePhoto.jsx`; upload helper `auth/profilePhotoUpload.js` crops to a square, 800 px WebP/JPEG), gold dot on the header Account button while under 100 %. The nudges do not say why the photo is wanted (user's request); the privacy notice states the purpose, as law 18-07 requires.
+- Admin Appointments cards show the client's photo (signed links) or their initial.
+- Privacy notice updated to 25 October 2026 (PRIVACY_VERSION 2026-10-25): username, booking data and history, WhatsApp verification message, optional profile photo and its purpose, no automated face recognition, Resend and Meta (WhatsApp) as processors; the old "online bookings are not stored yet" line removed.
+- Checked: build and lint pass; headless test 4/4 (privacy content, no dot when signed out); security advisors only list intended items. Not yet checked with a real signed-in client upload.
+- Phase 4 must add the review form's choice "Show my photo with my review" (stored in `reviews.show_photo`, default hidden).
+
 ## Working continuity
 
 Two AI agents work on this project on this Mac: ChatGPT (desktop Work/Codex) and Claude Code (VS Code extension). Both edit this same local application and share memory only through `AGENTS.md` and this file. Do not replace the project with a different site builder. Maintain this file incrementally after meaningful milestones, record unfinished work before stopping, and update AGENTS.md when persistent rules change.

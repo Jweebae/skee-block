@@ -16,6 +16,7 @@ import AdminGate from './admin/AdminGate'
 import useClientSession from './auth/useClientSession'
 import ClientAccount from './auth/ClientAccount'
 import AccountPage from './auth/AccountPage'
+import useClientProfile from './auth/useClientProfile'
 import PrivacyNotice from './legal/PrivacyNotice'
 import { CutHoverPhotos, CutPhotosButton } from './booking/CutPhotos'
 
@@ -29,6 +30,7 @@ function ChatIcon() {
 export default function App() {
   const { settings, error: storageError, saveSettings } = useStudioSettings()
   const client = useClientSession()
+  const profileStatus = useClientProfile(client.profileComplete ? client.user : null)
   const [isAdmin, setIsAdmin] = useState(() => window.location.hash === '#admin')
   const [isPrivacy, setIsPrivacy] = useState(() => window.location.hash === '#privacy')
   const [isAccount, setIsAccount] = useState(() => window.location.hash === '#account')
@@ -166,7 +168,7 @@ export default function App() {
           </nav>
           <div className="desktop-actions header-actions">
             <button className="btn btn-ghost button-sign-in" data-action="account" type="button">
-              {client.user ? 'Account' : 'Sign in'}
+              {client.user ? 'Account' : 'Sign in'}{client.user && profileStatus.loaded && profileStatus.percent < 100 && <span className="header-account-dot" aria-label={`Profile ${profileStatus.percent}% complete`} />}
             </button>
             <button className="btn btn-bone button-book" data-action="booking" type="button">
               Book
@@ -752,13 +754,13 @@ export default function App() {
     <div className="mobile-booking-bar"><button className="mobile-book" data-action="booking">Book the chair <span aria-hidden="true">→</span></button><button className="mobile-chat" data-action="whatsapp" aria-label="WhatsApp Skee"><ChatIcon /></button></div>
       {isAccount && <AccountPage client={client} settings={settings} onClose={() => { window.location.hash = 'top' }} onBook={serviceId => setBookingRequest({ serviceId })} onSignIn={openAccount} />}
       <dialog ref={bookingDialogRef} className="booking-dialog" aria-labelledby="booking-title" onClose={() => setBookingRequest(null)}>
-        {bookingRequest && <BookingFlow settings={settings} initialServiceId={bookingRequest.serviceId} client={client} onSignIn={openAccount} onOpenAccount={() => { bookingDialogRef.current.close(); window.location.hash = 'account' }} onClose={() => bookingDialogRef.current.close()} />}
+        {bookingRequest && <BookingFlow settings={settings} initialServiceId={bookingRequest.serviceId} client={client} profileStatus={profileStatus} onSignIn={openAccount} onOpenAccount={() => { bookingDialogRef.current.close(); window.location.hash = 'account' }} onClose={() => bookingDialogRef.current.close()} />}
       </dialog>
       <dialog ref={dialogRef} aria-labelledby="dialog-title" className="action-dialog" onClick={event => { if (event.target === event.currentTarget) dialogRef.current.close() }}>
         <button className="dialog-close" aria-label="Close" onClick={() => dialogRef.current.close()}>×</button>
         <span className="lbl">Skee Block · By appointment</span>
         {action === 'account' && client.available
-          ? <ClientAccount client={client} onLater={() => dialogRef.current.close()} />
+          ? <ClientAccount client={client} profileStatus={profileStatus} onLater={() => dialogRef.current.close()} />
           : <>
             <h2 id="dialog-title" className="serif">{action === 'account' ? 'Your place at the Block.' : 'Talk to Skee.'}</h2>
             <p>{action === 'account' ? 'Client accounts are coming soon. Contact Skee for help with your appointment or review.' : 'Contact Skee on WhatsApp to arrange your visit, or reach him on Instagram.'}</p>

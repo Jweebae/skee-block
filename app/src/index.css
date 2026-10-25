@@ -18,3 +18,24 @@ section{scroll-margin-top:20px}
 .wa-verify-button:focus-visible{outline:1px solid #C9A96A;outline-offset:2px}
 .wa-verify-hint{font-size:13px;color:#8E8B85}
 .wa-verify-error{color:#E39A8E}
+.photo-pick{position:relative;cursor:pointer;overflow:hidden}
+.photo-pick input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.photo-pick:focus-within{outline:1px solid #C9A96A;outline-offset:2px}
+.photo-error{margin:8px 0 0;color:#E39A8E;font-size:13px}
+.profile-photo{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.profile-photo-frame{width:88px;height:88px;flex:none;border-radius:50%;overflow:hidden;border:1px solid #C9A96A;display:grid;place-items:center;background:#1C1C1C;color:#C9A96A;font:400 34px/1 'Bodoni Moda',serif}
+.profile-photo-frame img{width:100%;height:100%;object-fit:cover}
+.profile-photo-actions{display:flex;flex-wrap:wrap;gap:10px}
+.profile-nudge{display:flex;align-items:center;gap:16px;padding:14px 16px;border:1px solid #C9A96A66;background:#C9A96A0D;color:#D9D5CE;font-family:'Inter Tight',sans-serif;border-radius:2px}
+.profile-nudge-ring{--p:0;flex:none;width:52px;height:52px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(#C9A96A calc(var(--p) * 1%),#2A2A2A 0)}
+.profile-nudge-ring b{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:#131313;color:#F2EFE9;font:600 12px/1 'Inter Tight',sans-serif;font-variant-numeric:tabular-nums}
+.profile-nudge-copy{display:grid;gap:3px;min-width:0;flex:1;font-size:14px;line-height:1.45}
+.profile-nudge-copy strong{color:#F2EFE9;font-weight:500}
+.profile-nudge-copy span{color:#A8A49D}
+.profile-nudge-actions{display:flex;align-items:center;gap:6px;flex:none}
+.profile-nudge-button{display:inline-flex;align-items:center;min-height:40px;padding:0 14px;border:1px solid #C9A96A;border-radius:2px;background:transparent;color:#C9A96A;font:500 11px/1 'Inter Tight',sans-serif;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;white-space:nowrap}
+.profile-nudge-later{min-height:40px;padding:0 10px;border:0;background:none;color:#8E8B85;font:13px 'Inter Tight',sans-serif;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.profile-nudge-banner{padding:10px 14px}
+.profile-nudge-banner .profile-nudge-ring{width:40px;height:40px}.profile-nudge-banner .profile-nudge-ring b{width:32px;height:32px;font-size:10px}
+@media(max-width:520px){.profile-nudge{flex-wrap:wrap}.profile-nudge-actions{width:100%;justify-content:flex-start;padding-left:68px}.profile-nudge-banner .profile-nudge-actions{padding-left:56px}}
+.header-account-dot{display:inline-block;width:7px;height:7px;margin-left:8px;border-radius:50%;background:#C9A96A;vertical-align:middle}

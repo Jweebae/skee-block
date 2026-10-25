@@ -6,6 +6,8 @@ import { readDraft, writeDraft } from './bookingDraft'
 import PhoneField from '../lib/PhoneField'
 import WhatsAppVerify from '../auth/WhatsAppVerify'
 import { CutHoverPhotos, CutPhotosButton } from './CutPhotos'
+import ProfileNudge from '../auth/ProfileNudge'
+import { announceProfileChange } from '../auth/useClientProfile'
 import { localDzPart, normalizeDzMobile, PHONE_HINT } from '../lib/phone'
 import logo from '../assets/skee-logo-white.svg'
 import { BASE_CUT_PRICE, formatPrice, getPreviewDates } from './catalog'
@@ -23,7 +25,7 @@ function Check() {
   return <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12l5 5 9-10" /></svg>
 }
 
-export default function BookingFlow({ settings, initialServiceId, onClose, client, onSignIn, onOpenAccount }) {
+export default function BookingFlow({ settings, initialServiceId, onClose, client, onSignIn, onOpenAccount, profileStatus }) {
   const [draft] = useState(() => { const saved = readDraft(); return saved?.resume ? saved : null })
   const services = settings.services.filter(item => item.visible)
   const availableAddons = settings.addons.filter(item => item.visible).map(item => ({ ...item, types: item.types.filter(type => type.visible) })).filter(item => item.types.length)
@@ -105,6 +107,7 @@ export default function BookingFlow({ settings, initialServiceId, onClose, clien
       })
       setResult(data.booking)
       setPreviewDone(true)
+      announceProfileChange() // the WhatsApp number was saved to the profile
     } catch (problem) {
       setSendError(problem.message)
       if (problem.code === 'slot_taken' || problem.code === 'too_soon') { setTime(''); setBusyVersion(value => value + 1); setStep(2) }
@@ -166,6 +169,7 @@ export default function BookingFlow({ settings, initialServiceId, onClose, clien
             <div className="booking-lock"><span aria-hidden="true"><LockIcon /></span><div><h2 className="serif">Location stays private.</h2><p>Directions unlock once Skee confirms your appointment.</p></div></div>
             <a className="booking-primary" href={whatsappLink(STUDIO_PHONE, `Salam Skee, about booking ${result?.code} — `)} target="_blank" rel="noreferrer">Message Skee about {result?.code} ↗</a>
             <WhatsAppVerify className="booking-wa-verify" />
+            {signedIn && profileStatus && <ProfileNudge user={client.user} status={profileStatus} variant="banner" onOpenAccount={onOpenAccount} />}
             <div className="booking-complete-actions"><button className="booking-secondary" onClick={onOpenAccount}>See my appointments</button><button className="booking-secondary" onClick={onClose}>Back to home</button></div>
           </section> : <>
             <div className="booking-heading"><span className="lbl">Step {step + 1} of 4{step === 1 ? ' · optional' : ''}</span><h1 id="booking-title" className="serif" ref={headingRef} tabIndex={-1}>{TITLES[step]}</h1></div>
@@ -218,6 +222,7 @@ export default function BookingFlow({ settings, initialServiceId, onClose, clien
               <label className="booking-notes" htmlFor="booking-phone">WhatsApp number <span className="booking-hint">Required · Skee uses it only about your appointments.</span><PhoneField id="booking-phone" className="booking-input" value={phone} onChange={setPhone} invalid={Boolean(phone.trim()) && !phoneReady} /><span id="booking-phone-hint" className="booking-hint">{PHONE_HINT}</span></label>
               <fieldset className="booking-fieldset"><legend className="lbl">Preferred reminder channel</legend><div className="booking-channels">{['WhatsApp', 'Email'].map(item => <label className={`booking-channel ${channel === item ? 'is-selected' : ''}`} key={item}><input type="radio" name="channel" checked={channel === item} onChange={() => setChannel(item)} />{item}</label>)}</div><p className="booking-hint">You get a reminder on the morning of your appointment day.</p></fieldset>
               <div className="booking-lock"><span aria-hidden="true"><LockIcon /></span><div><h2 className="serif">Location hidden</h2><p>Revealed once Skee confirms your appointment.</p></div></div>
+              {signedIn && profileStatus?.next?.id === 'photo' && <ProfileNudge user={client.user} status={profileStatus} variant="banner" />}
               {!signedIn && <p className="booking-hint">You need a 3kee account to send a request. Your choices are kept while you sign in or create one.</p>}
             </div>}
 

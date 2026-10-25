@@ -146,3 +146,6 @@
 .cut-photos-add{justify-self:start;position:relative;cursor:pointer}
 .cut-photos-add input{position:absolute;inset:0;opacity:0;cursor:pointer}
 .cut-photos-add:focus-within{outline:1px solid #C9A96A;outline-offset:2px}
+.appt-who{display:flex;gap:16px;align-items:flex-start;min-width:0}
+.appt-photo{width:64px;height:64px;flex:none;border-radius:50%;object-fit:cover;border:1px solid #C9A96A}
+.appt-initial{display:grid;place-items:center;background:#1C1C1C;color:#6E6B66;border-color:#333;font:400 26px/1 'Bodoni Moda',serif}
