@@ -1,0 +1,4 @@
+.phone-field{display:flex;align-items:stretch;width:100%;min-width:0}
+.phone-field .phone-prefix{display:flex;align-items:center;padding:0 12px;border:1px solid #333;border-right:0;border-radius:2px 0 0 2px;background:#1C1C1C;color:#BDB8B0;font:16px 'Inter Tight',sans-serif;font-variant-numeric:tabular-nums;white-space:nowrap}
+.phone-field input{flex:1 1 auto;min-width:0;border-radius:0 2px 2px 0!important}
+.phone-field.is-invalid input,.phone-field.is-invalid .phone-prefix{border-color:#D9776A99}

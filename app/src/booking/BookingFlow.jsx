@@ -3,13 +3,14 @@ import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { callBookings, freeTimes, whatsappLink } from '../lib/bookingsApi'
 import { readDraft, writeDraft } from './bookingDraft'
+import PhoneField from '../lib/PhoneField'
+import { localDzPart, normalizeDzMobile, PHONE_HINT } from '../lib/phone'
 import logo from '../assets/skee-logo-white.svg'
 import { BASE_CUT_PRICE, formatPrice, getPreviewDates } from './catalog'
 import './BookingFlow.css'
 import { previewSlots } from '../settings/studioSettings'
 
 const STEPS = ['Service', 'Add-ons', 'Date & time', 'Review']
-const PHONE = /^\+?[0-9 ]{8,20}$/
 const TITLES = [<>Choose your <em>service</em>.</>, <>Refine the <em>ritual</em>.</>, <>Pick your <em>hour</em>.</>, <>Review & <em>confirm</em>.</>]
 
 function LockIcon() {
@@ -57,7 +58,7 @@ export default function BookingFlow({ settings, initialServiceId, onClose, clien
   const duration = (service?.duration || 0) + addons.reduce((sum, item) => sum + item.duration, 0)
   const times = freeTimes(previewSlots(settings.hours, dateId, duration), dateId, duration, busy)
   const bookableDates = dates.map(item => ({ ...item, closed: freeTimes(previewSlots(settings.hours, item.id, duration), item.id, duration, busy).length === 0 }))
-  const phoneReady = PHONE.test(phone.trim())
+  const phoneReady = Boolean(normalizeDzMobile(phone))
   const canContinue = Boolean(service) && (step === 0 || !needsType) && (step < 2 || Boolean(date && times.includes(time))) && (step < 3 || phoneReady) && !sending
   const when = date ? `${date.label}${time ? ` · ${time}` : ' · choose a time'}` : 'Date & time not chosen yet'
 
@@ -81,7 +82,7 @@ export default function BookingFlow({ settings, initialServiceId, onClose, clien
     if (!userId || !supabase) return
     let active = true
     supabase.from('client_profiles').select('phone').eq('user_id', userId).maybeSingle()
-      .then(({ data }) => { if (active && data?.phone) setPhone(current => current || data.phone) })
+      .then(({ data }) => { if (active && data?.phone) setPhone(current => current || localDzPart(data.phone)) })
     return () => { active = false }
   }, [userId])
 
@@ -98,7 +99,7 @@ export default function BookingFlow({ settings, initialServiceId, onClose, clien
     try {
       const data = await callBookings('create', {
         serviceId, addons: addons.map(item => ({ addonId: item.id, typeId: addonChoices[item.id] })),
-        date: dateId, time, preferences, notes, channel: channel.toLowerCase(), phone: phone.trim(),
+        date: dateId, time, preferences, notes, channel: channel.toLowerCase(), phone: normalizeDzMobile(phone),
       })
       setResult(data.booking)
       setPreviewDone(true)
@@ -209,7 +210,7 @@ export default function BookingFlow({ settings, initialServiceId, onClose, clien
               <div className="booking-review-card"><span className="lbl">Your visit with Skee</span><h2 className="serif">{service.name}</h2><p>{when} · {duration} min</p><button className="booking-text-button" onClick={() => setStep(2)}>Change date & time</button></div>
               {service.preferences.length > 0 && <fieldset className="booking-fieldset"><legend className="lbl">Cut preferences · optional</legend><div className="booking-preferences">{service.preferences.map(option => <label key={option} className="booking-preference"><input type="checkbox" checked={preferences.includes(option)} onChange={() => setPreferences(current => current.includes(option) ? current.filter(item => item !== option) : [...current, option])} />{option}</label>)}</div><p className="booking-hint">These preferences are included in your base cut.</p></fieldset>}
               <label className="booking-notes">Notes for Skee <span className="booking-hint">Optional · your preferred length, finish or anything Skee should know.</span><textarea value={notes} onChange={event => setNotes(event.target.value)} maxLength={1000} rows={4} placeholder="Low fade, keep the top longer…" /><span className="booking-hint">{notes.length}/1000</span></label>
-              <label className="booking-notes" htmlFor="booking-phone">WhatsApp number <span className="booking-hint">Required · Skee uses it only about your appointments.</span><input id="booking-phone" className="booking-input" type="tel" inputMode="tel" autoComplete="tel" maxLength={20} placeholder="+213 5XX XX XX XX" value={phone} onChange={event => setPhone(event.target.value)} />{phone.trim() && !phoneReady && <span className="booking-hint">Enter 8 to 20 digits, for example +213 5XX XX XX XX.</span>}</label>
+              <label className="booking-notes" htmlFor="booking-phone">WhatsApp number <span className="booking-hint">Required · Skee uses it only about your appointments.</span><PhoneField id="booking-phone" className="booking-input" value={phone} onChange={setPhone} invalid={Boolean(phone.trim()) && !phoneReady} /><span id="booking-phone-hint" className="booking-hint">{PHONE_HINT}</span></label>
               <fieldset className="booking-fieldset"><legend className="lbl">Preferred reminder channel</legend><div className="booking-channels">{['WhatsApp', 'Email'].map(item => <label className={`booking-channel ${channel === item ? 'is-selected' : ''}`} key={item}><input type="radio" name="channel" checked={channel === item} onChange={() => setChannel(item)} />{item}</label>)}</div><p className="booking-hint">You get a reminder on the morning of your appointment day.</p></fieldset>
               <div className="booking-lock"><span aria-hidden="true"><LockIcon /></span><div><h2 className="serif">Location hidden</h2><p>Revealed once Skee confirms your appointment.</p></div></div>
               {!signedIn && <p className="booking-hint">You need a 3kee account to send a request. Your choices are kept while you sign in or create one.</p>}

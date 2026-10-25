@@ -5,6 +5,8 @@ import { callBookings, dayLabel, algiersParts, freeTimes, whatsappLink, STATUS_L
 import { formatPrice, getPreviewDates } from '../booking/catalog'
 import { previewSlots } from '../settings/studioSettings'
 import { STUDIO_PHONE } from '../settings/studioContact'
+import PhoneField from '../lib/PhoneField'
+import { localDzPart, normalizeDzMobile, PHONE_HINT } from '../lib/phone'
 import './AccountPage.css'
 
 // The client's own dashboard (design board 05): upcoming appointment, history, profile and notifications.
@@ -12,7 +14,6 @@ import './AccountPage.css'
 // bookings Edge Function.
 const CANCEL_HOURS = 3
 const LIVE = ['requested', 'confirmed']
-const PHONE = /^\+?[0-9 ]{8,20}$/
 
 async function loadAccount(userId) {
   const [bookings, profile] = await Promise.all([
@@ -140,22 +141,23 @@ function History({ bookings, now, onChanged }) {
 }
 
 function Preferences({ userId, profile, onSaved }) {
-  const [fields, setFields] = useState(() => ({ phone: profile?.phone || '', reminder_channel: profile?.reminder_channel || 'email', email_notifications: profile?.email_notifications ?? true, rebook_nudges: profile?.rebook_nudges ?? false }))
+  const [fields, setFields] = useState(() => ({ phone: localDzPart(profile?.phone), reminder_channel: profile?.reminder_channel || 'email', email_notifications: profile?.email_notifications ?? true, rebook_nudges: profile?.rebook_nudges ?? false }))
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const toggle = key => setFields(current => ({ ...current, [key]: !current[key] }))
   async function save(event) {
     event.preventDefault()
-    if (fields.phone.trim() && !PHONE.test(fields.phone.trim())) { setError('Enter a WhatsApp number with 8 to 20 digits.'); return }
+    const phone = normalizeDzMobile(fields.phone)
+    if (fields.phone.trim() && !phone) { setError(`Check the WhatsApp number. ${PHONE_HINT}`); return }
     setSaving(true); setError('')
-    const { error: problem } = await supabase.from('client_profiles').upsert({ user_id: userId, ...fields, phone: fields.phone.trim() || null, updated_at: new Date().toISOString() })
+    const { error: problem } = await supabase.from('client_profiles').upsert({ user_id: userId, ...fields, phone, updated_at: new Date().toISOString() })
     setSaving(false)
     if (problem) setError('Your preferences could not be saved. Try again.')
     else onSaved('Preferences saved.')
   }
   return <form className="acct-box" onSubmit={save} aria-labelledby="acct-pref-title">
     <span id="acct-pref-title" className="acct-label">Profile & notifications</span>
-    <label className="acct-field">WhatsApp number<input type="tel" maxLength={20} placeholder="+213 5XX XX XX XX" value={fields.phone} onChange={event => setFields(current => ({ ...current, phone: event.target.value }))} /></label>
+    <label className="acct-field" htmlFor="acct-phone">WhatsApp number<PhoneField id="acct-phone" value={fields.phone} onChange={value => setFields(current => ({ ...current, phone: value }))} invalid={Boolean(fields.phone.trim()) && !normalizeDzMobile(fields.phone)} /><small id="acct-phone-hint" className="acct-muted">{PHONE_HINT}</small></label>
     <fieldset className="acct-field"><legend>Reminders by</legend><div className="acct-tabs">{[['email', 'Email'], ['whatsapp', 'WhatsApp']].map(([id, label]) => <button key={id} type="button" aria-pressed={fields.reminder_channel === id} onClick={() => setFields(current => ({ ...current, reminder_channel: id }))}>{label}</button>)}</div></fieldset>
     {[['email_notifications', 'Email', 'Confirmations, changes and your appointment-day reminder'], ['rebook_nudges', 'Rebook nudges', 'A gentle note when your cut is due']].map(([key, title, hint]) => <label key={key} className="acct-switch"><span>{title}<small>{hint}</small></span><input type="checkbox" role="switch" checked={fields[key]} onChange={() => toggle(key)} /></label>)}
     <button type="submit" className="acct-btn acct-btn-primary" disabled={saving}>{saving ? 'Saving…' : 'Save preferences'}</button>

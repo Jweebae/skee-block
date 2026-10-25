@@ -99,10 +99,14 @@ function checkOwnerTime(date: string, time: string) {
 }
 
 const cleanText = (value: unknown, max: number) => String(value ?? '').trim().slice(0, max)
+// Algerian mobiles only, with or without the first 0 or +213; stored as +213XXXXXXXXX (same rule as app/src/lib/phone.js).
 const cleanPhone = (value: unknown) => {
-  const phone = String(value ?? '').trim().replace(/[^\d+ ]/g, '')
-  if (!/^\+?[0-9 ]{8,20}$/.test(phone)) fail(400, 'bad_phone')
-  return phone
+  let digits = String(value ?? '').replace(/\D/g, '')
+  if (digits.startsWith('00213')) digits = digits.slice(5)
+  else if (digits.startsWith('213') && digits.length > 10) digits = digits.slice(3)
+  if (digits.startsWith('0')) digits = digits.slice(1)
+  if (!/^[567]\d{8}$/.test(digits)) fail(400, 'bad_phone')
+  return `+213${digits}`
 }
 const phoneDigits = (phone: string | null) => {
   let digits = String(phone ?? '').replace(/\D/g, '')
@@ -328,7 +332,7 @@ const OWNER_MOVES: Record<string, { from: string[]; to: string; afterStart?: boo
 }
 
 async function ownerUpdate(db: SupabaseClient, body: any) {
-  const move = OWNER_MOVES[body.action]
+  const move = OWNER_MOVES[body.move]
   if (!move) fail(400, 'bad_action')
   const booking = await getBooking(db, body.id)
   if (!move.from.includes(booking.status)) fail(409, 'wrong_status')

@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { callBookings, dayLabel, algiersParts, STATUS_LABELS, whatsappLink } from '../lib/bookingsApi'
 import { BASE_CUT_PRICE, formatPrice } from '../booking/catalog'
+import PhoneField from '../lib/PhoneField'
+import { formatDzMobile, normalizeDzMobile } from '../lib/phone'
 
 // Owners answer requests, close visits, move or cancel appointments, and add walk-ins. Every change goes through the
 // bookings Edge Function, which emails the client where needed.
@@ -44,7 +46,7 @@ function BookingCard({ booking, locationUrl, onAction, busy, now }) {
       <div className="appt-side"><span className={`appt-status appt-${booking.status}`}>{STATUS_LABELS[booking.status]}</span><strong>{formatPrice(booking.total_price)}</strong><small>{booking.code}{booking.source === 'walk_in' ? ' · walk-in' : ''}</small></div>
     </div>
     <dl className="appt-details">
-      {booking.client_phone && <div><dt>WhatsApp</dt><dd>{booking.client_phone}</dd></div>}
+      {booking.client_phone && <div><dt>WhatsApp</dt><dd>{formatDzMobile(booking.client_phone)}</dd></div>}
       {booking.client_email && <div><dt>Email</dt><dd>{booking.client_email}</dd></div>}
       {booking.preferences?.length > 0 && <div><dt>Preferences</dt><dd>{booking.preferences.join(' · ')}</dd></div>}
       {booking.notes && <div><dt>Notes</dt><dd>{booking.notes}</dd></div>}
@@ -80,9 +82,11 @@ function WalkInForm({ settings, onDone }) {
   const minutes = (service ? Number(service.duration) : 0) + extras.reduce((sum, type) => sum + Number(type.duration), 0)
   async function submit(event) {
     event.preventDefault()
+    const phone = fields.phone.trim() ? normalizeDzMobile(fields.phone) : ''
+    if (phone === null) { setError('Check the WhatsApp number: an Algerian mobile, with or without the first 0.'); return }
     setBusy(true); setError('')
     try {
-      await callBookings('walk_in', { ...fields, addons: Object.entries(choices).filter(([, typeId]) => typeId).map(([addonId, typeId]) => ({ addonId, typeId })) })
+      await callBookings('walk_in', { ...fields, phone, addons: Object.entries(choices).filter(([, typeId]) => typeId).map(([addonId, typeId]) => ({ addonId, typeId })) })
       onDone(`Walk-in saved for ${fields.name} on ${fields.date} at ${fields.time}.`)
     } catch (problem) { setError(problem.message) } finally { setBusy(false) }
   }
@@ -90,7 +94,7 @@ function WalkInForm({ settings, onDone }) {
     <div className="admin-card-heading"><span className="lbl">Walk-in or phone booking</span></div>
     <div className="admin-field-grid">
       <label>Client name<input required maxLength={121} value={fields.name} onChange={set('name')} /></label>
-      <label>WhatsApp number<input type="tel" maxLength={20} placeholder="+213 5XX XX XX XX" value={fields.phone} onChange={set('phone')} /></label>
+      <label htmlFor="walkin-phone">WhatsApp number<PhoneField id="walkin-phone" value={fields.phone} onChange={value => setFields(current => ({ ...current, phone: value }))} /></label>
       <label>Email (optional)<input type="email" maxLength={254} value={fields.email} onChange={set('email')} /></label>
       <label>Cut<select value={fields.serviceId} onChange={set('serviceId')}>{settings.services.map(item => <option key={item.id} value={item.id}>{item.name} · {item.duration} min</option>)}</select></label>
       <label>Date<input type="date" required value={fields.date} onChange={set('date')} /></label>
@@ -126,7 +130,7 @@ export default function AppointmentsManager({ settings, headingRef }) {
     setBusy(true); setError(''); setMessage('')
     try {
       if (action === 'move') await callBookings('owner_move', { id: booking.id, ...extra })
-      else await callBookings('owner_update', { id: booking.id, action })
+      else await callBookings('owner_update', { id: booking.id, move: action })
       const done = { confirm: 'accepted; the client was emailed', decline: 'declined; the client was emailed', cancel: 'cancelled; the client was emailed', complete: 'marked done', no_show: 'marked missed', move: 'moved; the client was emailed' }[action]
       setMessage(`${booking.code} (${booking.client_name}) ${done}.`)
       setVersion(value => value + 1)

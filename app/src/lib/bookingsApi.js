@@ -8,7 +8,7 @@ const MESSAGES = {
   outside_window: 'Choose a date within the next two weeks.',
   too_many_active: 'You already have two upcoming appointments or requests. Cancel one, or message Skee on WhatsApp.',
   profile_incomplete: 'Finish creating your account first.',
-  bad_phone: 'Enter a WhatsApp number with 8 to 20 digits, for example +213 5XX XX XX XX.',
+  bad_phone: 'Check the WhatsApp number: an Algerian mobile, with or without the first 0, for example 0555 12 34 56.',
   unknown_service: 'This cut is no longer on the menu. Choose another cut.',
   bad_addons: 'One of the add-ons changed. Check your add-ons again.',
   too_late: 'It is too late to change this appointment online. Message Skee on WhatsApp.',
@@ -21,6 +21,8 @@ const MESSAGES = {
   locked: 'The location unlocks once Skee confirms your appointment.',
   bad_name: 'Enter the client’s name.',
   bad_email: 'Check the email address.',
+  bad_action: 'This change is not possible. Refresh the page and try again.',
+  unknown_action: 'This change is not possible. Refresh the page and try again.',
 }
 
 export class BookingError extends Error {
@@ -32,7 +34,8 @@ export class BookingError extends Error {
 
 export async function callBookings(action, body = {}) {
   if (!supabase) throw new BookingError('unavailable')
-  const { data, error } = await supabase.functions.invoke('bookings', { body: { action, ...body } })
+  // `action` names the job and always comes last, so nothing in `body` can replace it.
+  const { data, error } = await supabase.functions.invoke('bookings', { body: { ...body, action } })
   if (!error) return data
   let code = 'server_error'
   try { code = (await error.context?.json())?.error || code } catch { /* not JSON */ }
