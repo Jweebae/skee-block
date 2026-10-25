@@ -158,8 +158,9 @@ function SignedIn({ client }) {
   if (changing) return <ChoosePassword client={client} intro="Pick a new password for signing in with your email." onCancel={() => setChanging(false)} onDone={() => setChanging(false)} />
   return <>
     <h2 id="dialog-title" className="serif">{name ? `Hello, ${name}.` : 'Welcome back.'}</h2>
-    <p>Signed in as {client.user.email}. Booking history and saved preferences are coming soon; bookings are not connected yet.</p>
+    <p>Signed in as {client.user.email}. Your appointments, history and preferences are in My account.</p>
     <Messages error={client.error} notice={client.notice} />
+    {window.location.hash !== '#account' && <a className="btn btn-bone dialog-account-button" href="#account">Open my account</a>}
     <button type="button" className="btn btn-ghost dialog-account-button" onClick={() => setChanging(true)}>Change password</button>
     <button type="button" className="btn btn-ghost dialog-account-button" onClick={client.signOut}>Sign out</button>
   </>

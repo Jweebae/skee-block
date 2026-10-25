@@ -670,6 +670,13 @@ The user confirmed Google sign-in worked and asked for a proper sign-up (first/l
 - Checked: build and lint pass; headless browser test 7/7 (busy times requested, review needs WhatsApp number, signed-out "Sign in to send" opens the account window and keeps the draft); function refuses unsigned callers. Not yet checked end to end with a real client and owner (agents cannot sign in to real accounts): the user must send a request from a client account and answer it in the admin page.
 - Next: phase 2 client dashboard (Claude).
 
+## Phase 2 client dashboard — 2026-10-25 (Claude Code)
+
+- Full-screen My account page at `#account` (`app/src/auth/AccountPage.jsx` + `.css`, following design board 05): "Salam, name", client since, Visits and Usual cut, Book again; upcoming card(s) with code, status, Reschedule (free times from the `busy` action, back to review), Cancel (confirmed: until 3 h before; otherwise WhatsApp), WhatsApp link prefilled with the code, reminder checklist from the booking's `emails` log, View location (confirmed only, through the `location` action); History tabs Completed / Cancelled (declined, missed, expired, cancelled) / Deleted with Remove and Restore; Profile & notifications (WhatsApp number, reminder channel, email notifications, rebook nudges) saved straight to `client_profiles`; sign-in box with change password and sign out.
+- Wiring: the header Account button opens `#account` for signed-in clients with a finished profile (the small window stays for signing in); the booking success screen's "See my appointments" goes there; the small window's signed-in view has "Open my account".
+- Checked: build and lint pass; headless test 5/5 for the signed-out page (opens at #account, asks to sign in, Sign in opens the window, Home closes it). The signed-in dashboard needs a real client account to check; not yet seen with real data.
+- Not built yet from board 05: message inbox (left out), review button (phase 4), delete account (later).
+
 ## Working continuity
 
 Two AI agents work on this project on this Mac: ChatGPT (desktop Work/Codex) and Claude Code (VS Code extension). Both edit this same local application and share memory only through `AGENTS.md` and this file. Do not replace the project with a different site builder. Maintain this file incrementally after meaningful milestones, record unfinished work before stopping, and update AGENTS.md when persistent rules change.

@@ -14,6 +14,7 @@ import { STUDIO_PHONE, STUDIO_AREA, WHATSAPP_URL } from './settings/studioContac
 import AdminGate from './admin/AdminGate'
 import useClientSession from './auth/useClientSession'
 import ClientAccount from './auth/ClientAccount'
+import AccountPage from './auth/AccountPage'
 import PrivacyNotice from './legal/PrivacyNotice'
 
 
@@ -28,6 +29,7 @@ export default function App() {
   const client = useClientSession()
   const [isAdmin, setIsAdmin] = useState(() => window.location.hash === '#admin')
   const [isPrivacy, setIsPrivacy] = useState(() => window.location.hash === '#privacy')
+  const [isAccount, setIsAccount] = useState(() => window.location.hash === '#account')
   const visibleServices = settings.services.filter(item => item.visible)
   const openDays = settings.hours.filter(item => item.open)
   const hoursSummary = openDays.length === 0 ? 'Closed this week' : openDays.length === 6 && !settings.hours[5].open && openDays.every(item => item.start === openDays[0].start && item.end === openDays[0].end) ? `Sat–Thu · ${openDays[0].start}–${openDays[0].end}` : `${openDays.length} open days · See weekly hours`
@@ -39,7 +41,11 @@ export default function App() {
   const [bookingRequest, setBookingRequest] = useState(null)
 
   useEffect(() => {
-    const navigate = () => { setBookingRequest(null); setMenuOpen(false); setIsAdmin(window.location.hash === '#admin'); setIsPrivacy(window.location.hash === '#privacy') }
+    const navigate = () => {
+      const hash = window.location.hash
+      setBookingRequest(null); setMenuOpen(false); setIsAdmin(hash === '#admin'); setIsPrivacy(hash === '#privacy'); setIsAccount(hash === '#account')
+      if (hash === '#account' && dialogRef.current?.open) dialogRef.current.close()
+    }
     window.addEventListener('hashchange', navigate)
     return () => window.removeEventListener('hashchange', navigate)
   }, [])
@@ -49,6 +55,13 @@ export default function App() {
     const frame = requestAnimationFrame(() => document.getElementById('top')?.scrollIntoView({ behavior: 'instant' }))
     return () => cancelAnimationFrame(frame)
   }, [isAdmin])
+
+  useEffect(() => {
+    if (!isAccount || isAdmin) return
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = previousOverflow }
+  }, [isAccount, isAdmin])
 
   useEffect(() => {
     if (!bookingRequest || isAdmin) return
@@ -101,6 +114,11 @@ export default function App() {
     if (trigger.dataset.action === 'booking') {
       setMenuOpen(false)
       setBookingRequest({ serviceId: trigger.dataset.service || null })
+      return
+    }
+    if (trigger.dataset.action === 'account' && client.user && client.profileComplete) {
+      setMenuOpen(false)
+      window.location.hash = 'account'
       return
     }
     setAction(trigger.dataset.action)
@@ -721,8 +739,9 @@ export default function App() {
 
       </button>
     <div className="mobile-booking-bar"><button className="mobile-book" data-action="booking">Book the chair <span aria-hidden="true">→</span></button><button className="mobile-chat" data-action="whatsapp" aria-label="WhatsApp Skee"><ChatIcon /></button></div>
+      {isAccount && <AccountPage client={client} settings={settings} onClose={() => { window.location.hash = 'top' }} onBook={serviceId => setBookingRequest({ serviceId })} onSignIn={openAccount} />}
       <dialog ref={bookingDialogRef} className="booking-dialog" aria-labelledby="booking-title" onClose={() => setBookingRequest(null)}>
-        {bookingRequest && <BookingFlow settings={settings} initialServiceId={bookingRequest.serviceId} client={client} onSignIn={openAccount} onOpenAccount={() => { bookingDialogRef.current.close(); openAccount() }} onClose={() => bookingDialogRef.current.close()} />}
+        {bookingRequest && <BookingFlow settings={settings} initialServiceId={bookingRequest.serviceId} client={client} onSignIn={openAccount} onOpenAccount={() => { bookingDialogRef.current.close(); window.location.hash = 'account' }} onClose={() => bookingDialogRef.current.close()} />}
       </dialog>
       <dialog ref={dialogRef} aria-labelledby="dialog-title" className="action-dialog" onClick={event => { if (event.target === event.currentTarget) dialogRef.current.close() }}>
         <button className="dialog-close" aria-label="Close" onClick={() => dialogRef.current.close()}>×</button>
