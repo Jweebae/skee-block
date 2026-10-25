@@ -62,6 +62,7 @@ The approved visual identity source is:
 ## Emails
 
 - Client emails are written in `emails/build.mjs` and generated into `emails/html/` with `node emails/build.mjs`; never hand-edit the generated files. In emails the brand name is **3kee** only. The email logo is `app/public/email/3kee-logo.png` on the live site.
+- Edge Functions (deploy with the Supabase MCP, verify_jwt false, each checks callers itself): `send-email` (welcome), `bookings` (every booking change and its emails/WhatsApp messages), `whatsapp` (Meta webhook, number verification, owner connection), `account` (usernames, username sign-in). After editing one, redeploy it and keep the repository copy identical to the deployed one.
 - Website emails are sent through Resend by the Supabase Edge Function `supabase/functions/send-email`, which fetches the templates from `https://3kee.site/email/templates/`. The Resend key lives only in the Supabase secret `RESEND_API_KEY`. The function must only ever email the signed-in user's own address; never let the browser choose a recipient. Redeploy it through the Supabase MCP (`verify_jwt` false) after editing.
 
 ## Git and GitHub

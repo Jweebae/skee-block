@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { MIN_PASSWORD } from './useClientSession'
+import { suggestUsername, USERNAME_PATTERN } from '../lib/accountApi'
 import './ClientAccount.css'
 
 const RESEND_AFTER = 60 // seconds; Supabase also refuses a new code for the same email within about a minute
@@ -87,7 +88,7 @@ function SignedOut({ client }) {
     </> : <>
       <form className="client-form" onSubmit={signIn}>
         <fieldset disabled={busy}>
-          <Field label="Email" type="email" autoComplete="username" required value={email} onChange={event => setEmail(event.target.value)} />
+          <Field label="Email or username" type="text" inputMode="email" autoCapitalize="none" autoCorrect="off" spellCheck={false} autoComplete="username" required value={email} onChange={event => setEmail(event.target.value)} />
           <Field label="Password" type="password" autoComplete="current-password" required value={password} onChange={event => setPassword(event.target.value)} />
           <button type="submit" className="btn btn-bone dialog-account-button">{busy ? 'Please wait…' : 'Sign in'}</button>
         </fieldset>
@@ -109,7 +110,8 @@ function SignedOut({ client }) {
 function FinishAccount({ client, onLater }) {
   const meta = client.user.user_metadata || {}
   const [first, ...rest] = String(meta.full_name || meta.name || '').trim().split(/\s+/)
-  const [fields, setFields] = useState({ firstName: first || '', lastName: rest.join(' '), password: '', confirm: '', accepted: false })
+  const [fields, setFields] = useState({ firstName: first || '', lastName: rest.join(' '), username: '', password: '', confirm: '', accepted: false })
+  const suggestion = suggestUsername(fields.firstName, fields.lastName)
   const { busy, problem, run } = useAction()
   const set = key => event => setFields(current => ({ ...current, [key]: event.target.value }))
   return <>
@@ -117,10 +119,12 @@ function FinishAccount({ client, onLater }) {
     <p>Your email is confirmed. Choose how Skee should know you, and set a password so you can also sign in without Google.</p>
     <form className="client-form" onSubmit={event => { event.preventDefault(); run(() => client.completeProfile(fields)) }}>
       <fieldset disabled={busy}>
+        <p className="client-note"><strong>Note:</strong> Please enter your official first and last names so Skee can get to know you properly.</p>
         <div className="client-two">
           <Field label="First name" autoComplete="given-name" required maxLength={60} value={fields.firstName} onChange={set('firstName')} />
           <Field label="Last name" autoComplete="family-name" required maxLength={60} value={fields.lastName} onChange={set('lastName')} />
         </div>
+        <Field label="Username (optional)" autoComplete="username" autoCapitalize="none" autoCorrect="off" spellCheck={false} maxLength={30} pattern={USERNAME_PATTERN} placeholder={suggestion || 'your.name'} hint={`You can sign in with it instead of your email. Leave it empty and we’ll create one${suggestion ? ` like ${suggestion}` : ''}.`} value={fields.username} onChange={set('username')} />
         <Field label="Password" type="password" autoComplete="new-password" required minLength={MIN_PASSWORD} hint={`At least ${MIN_PASSWORD} characters.`} value={fields.password} onChange={set('password')} />
         <Field label="Confirm password" type="password" autoComplete="new-password" required minLength={MIN_PASSWORD} value={fields.confirm} onChange={set('confirm')} />
         <label className="client-check"><input type="checkbox" required checked={fields.accepted} onChange={event => setFields(current => ({ ...current, accepted: event.target.checked }))} /><span>I have read and accept the <PrivacyLink />.</span></label>

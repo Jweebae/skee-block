@@ -42,7 +42,7 @@
 .acct-reschedule{display:grid;gap:12px;margin-top:10px;padding-top:16px;border-top:1px solid #262626}
 .acct-two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .acct-page label{display:flex;flex-direction:column;gap:8px;font-size:13px;color:#A8A49D}
-.acct-page select,.acct-page input[type=tel]{width:100%;min-height:48px;padding:12px;background:#0B0B0B;color:#F2EFE9;border:1px solid #333;border-radius:2px;font:16px 'Inter Tight',sans-serif}
+.acct-page select,.acct-page input[type=tel],.acct-page .acct-text{width:100%;min-height:48px;padding:12px;background:#0B0B0B;color:#F2EFE9;border:1px solid #333;border-radius:2px;font:16px 'Inter Tight',sans-serif}
 .acct-page select:focus-visible,.acct-page input:focus-visible,.acct-btn:focus-visible,.acct-tabs button:focus-visible{outline:1px solid #C9A96A;outline-offset:2px}
 .acct-history-head{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:12px}
 .acct-history h2{margin:0;font-size:42px;font-weight:400}
@@ -79,3 +79,4 @@
   .acct-history h2{font-size:34px}
 }
 @media(prefers-reduced-motion:reduce){.acct-page{scroll-behavior:auto}}
+.acct-username{display:grid;gap:12px}

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { PRIVACY_VERSION } from '../legal/privacy'
+import { callAccount } from '../lib/accountApi'
 
 export const MIN_PASSWORD = 10
 const RESET_KEY = 'skee.client-reset' // non-secret marker: the client proved they own their email and is now choosing a new password
@@ -76,15 +77,24 @@ export default function useClientSession() {
     })
     if (problem) { storeReset(false); setResetting(false); setError('Could not start Google sign-in. Please try again.') }
   }
-  async function signInWithPassword(email, password) {
+  // Email or username. A username is checked by the account function, which returns a session without revealing the email.
+  async function signInWithPassword(identifier, password) {
     setError(''); setNotice('')
-    const { error: problem } = await supabase.auth.signInWithPassword({ email: String(email).trim(), password })
-    if (problem) throw new Error('Wrong email or password.')
+    const id = String(identifier).trim()
+    if (!id.includes('@')) {
+      const tokens = await callAccount('login', { username: id, password })
+      const { error: problem } = await supabase.auth.setSession(tokens)
+      if (problem) throw new Error('Sign-in did not complete. Please try again.')
+      return
+    }
+    const { error: problem } = await supabase.auth.signInWithPassword({ email: id, password })
+    if (problem) throw new Error('Wrong username, email or password.')
   }
   // Emails a 6-digit code to an existing account. Failures other than "too many requests" look like success on
   // purpose, so nobody can find out which email addresses have accounts.
   async function sendCode(email) {
     setError(''); setNotice('')
+    if (!String(email).includes('@')) throw new Error('Enter your email address (not your username) to get a code.')
     const { error: problem } = await supabase.auth.signInWithOtp({ email: String(email).trim(), options: { shouldCreateUser: false } })
     if (problem?.status === 429) throw new Error('Too many requests. Please wait a minute, or confirm with Google instead.')
   }
@@ -93,15 +103,19 @@ export default function useClientSession() {
     if (problem) throw new Error('That code is not right or has expired. Ask for a new one, or confirm with Google instead.')
     storeReset(true); setResetting(true)
   }
-  async function completeProfile({ firstName, lastName, password, confirm, accepted }) {
+  async function completeProfile({ firstName, lastName, username, password, confirm, accepted }) {
     const first = cleanName(firstName, 'first name'), last = cleanName(lastName, 'last name')
     checkPassword(password, confirm)
     if (!accepted) throw new Error('Please read and accept the privacy notice to create your account.')
+    // A chosen username is claimed first, so a taken name stops here before anything else is saved.
+    if (String(username || '').trim()) await callAccount('set_username', { username })
     const { data, error: problem } = await supabase.auth.updateUser({ password, data: { first_name: first, last_name: last, profile_complete: true, privacy_version: PRIVACY_VERSION, privacy_accepted_at: new Date().toISOString() } })
     if (problem) throw new Error('Your account could not be saved. Choose a different password, or try again in a moment.')
     storeReset(false); setResetting(false)
     setSession(current => current && { ...current, user: data.user })
     setNotice('Your account is ready.')
+    // No username chosen: create one from the name (failures stay silent; it can be set later in My account).
+    if (!String(username || '').trim()) callAccount('set_username', {}).catch(() => {})
     // The welcome email is a nice-to-have: the send-email function sends it once per account; failures stay silent.
     supabase.functions.invoke('send-email', { body: { template: 'welcome' } }).catch(() => {})
   }

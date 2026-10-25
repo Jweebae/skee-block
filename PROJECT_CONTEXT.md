@@ -707,6 +707,14 @@ The user confirmed Google sign-in worked and asked for a proper sign-up (first/l
 - Cut photos: `services[].photos` (up to 8 bucket URLs, validated in `validateSettings`); admin upload per cut (`admin/CutPhotosEditor.jsx`, shrinks to 1400 px WebP/JPEG in the browser); `booking/CutPhotos.jsx`: hover/focus overlay cycling photos on homepage cards and booking step 1, a "Photos" button opening a viewer on touch screens. Orphaned files after "Remove" are not deleted from storage yet.
 - Checked: build and lint pass; homepage grid unchanged (6 cards, same size). Not yet checked with a real photo or a real Meta connection.
 
+## Usernames and the names note — 2026-10-25 (Claude Code)
+
+- Finish-account form: a note above the names ("Note: Please enter your official first and last names so Skee can get to know you properly.") and an optional Username field; empty → created from the names (e.g. said.ladjelat, with digits if taken).
+- Sign in with email, username or Google: the sign-in box says "Email or username". A username goes to the new Edge Function `account` (`supabase/functions/account/index.ts`, verify_jwt false), which looks up the account, signs in server-side and returns the session tokens; the email behind a username is never sent to the browser; unknown usernames and wrong passwords get the same answer; 5 failed attempts per username in 15 minutes → "too many attempts" (`login_attempts` table). "Email me a code" still needs an email.
+- Database: migration `20261025020514_client_usernames` (applied with the MCP): `client_profiles.username` (unique, lowercase, 3–30 of a-z 0-9 . _, starts/ends alphanumeric; reserved words blocked in the function), `login_attempts` (no browser access). Clients cannot write `username` directly (no column grant); only the `account` function sets it (`set_username`, `check_username`).
+- My account: Sign-in box shows the username with Change / Choose one.
+- Checked: function refuses an unknown username with `wrong_login` five times, then `too_many_attempts`; headless test 4/4 (label, refusal message, forgot panel, code needs email). Build and lint pass. The owner login page (`#admin`) still uses email only.
+
 ## Working continuity
 
 Two AI agents work on this project on this Mac: ChatGPT (desktop Work/Codex) and Claude Code (VS Code extension). Both edit this same local application and share memory only through `AGENTS.md` and this file. Do not replace the project with a different site builder. Maintain this file incrementally after meaningful milestones, record unfinished work before stopping, and update AGENTS.md when persistent rules change.

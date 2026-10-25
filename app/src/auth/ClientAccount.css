@@ -19,3 +19,5 @@
 .client-recover{margin-top:24px;padding-top:4px;border-top:1px solid #262626}
 .client-recover .dialog-account-button{margin-top:12px}
 @media(max-width:420px){.client-two{grid-template-columns:1fr}}
+.action-dialog .client-note{margin:0;padding:12px 14px;border:1px solid #C9A96A55;background:#C9A96A0D;font-size:14px;line-height:1.55;color:#D9D5CE}
+.action-dialog .client-note strong{color:#C9A96A;font-weight:600;letter-spacing:.04em}

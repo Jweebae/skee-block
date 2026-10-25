@@ -8,6 +8,7 @@ import { STUDIO_PHONE } from '../settings/studioContact'
 import PhoneField from '../lib/PhoneField'
 import { localDzPart, normalizeDzMobile, PHONE_HINT } from '../lib/phone'
 import WhatsAppVerify from './WhatsAppVerify'
+import { callAccount, USERNAME_PATTERN } from '../lib/accountApi'
 import './AccountPage.css'
 
 // The client's own dashboard (design board 05): upcoming appointment, history, profile and notifications.
@@ -167,6 +168,25 @@ function Preferences({ userId, profile, onSaved }) {
   </form>
 }
 
+function UsernameBox({ current, onSaved }) {
+  const [editing, setEditing] = useState(false)
+  const [value, setValue] = useState(current || '')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+  async function save(event) {
+    event.preventDefault()
+    setSaving(true); setError('')
+    try { const data = await callAccount('set_username', { username: value }); setEditing(false); onSaved(`Your username is now ${data.username}.`) }
+    catch (problem) { setError(problem.message) } finally { setSaving(false) }
+  }
+  if (!editing) return <p>Username: <strong>{current || 'not set yet'}</strong> <button type="button" className="acct-link" onClick={() => { setValue(current || ''); setEditing(true) }}>{current ? 'Change' : 'Choose one'}</button></p>
+  return <form className="acct-username" onSubmit={save}>
+    <label className="acct-field" htmlFor="acct-username">Username<input id="acct-username" className="acct-text" autoCapitalize="none" autoCorrect="off" spellCheck={false} maxLength={30} pattern={USERNAME_PATTERN} required value={value} onChange={event => setValue(event.target.value)} /><small className="acct-muted">3 to 30 letters, numbers, dots or underscores. You can sign in with it instead of your email.</small></label>
+    <div className="acct-actions"><button type="button" className="acct-btn" onClick={() => setEditing(false)}>Keep it</button><button type="submit" className="acct-btn acct-btn-primary" disabled={saving}>{saving ? 'Saving…' : 'Save username'}</button></div>
+    {error && <p className="acct-error" role="alert">{error}</p>}
+  </form>
+}
+
 export default function AccountPage({ client, settings, onClose, onBook, onSignIn }) {
   const [state, setState] = useState({ bookings: null, profile: null, now: 0, error: '' })
   const [version, setVersion] = useState(0)
@@ -207,7 +227,7 @@ export default function AccountPage({ client, settings, onClose, onBook, onSignI
           <History bookings={bookings} now={state.now} onChanged={changed} />
           <div className="acct-grid">
             <Preferences key={state.profile?.updated_at || 'new'} userId={userId} profile={state.profile} onSaved={changed} />
-            <section className="acct-box" aria-labelledby="acct-sign-title"><span id="acct-sign-title" className="acct-label">Sign-in</span><p>Signed in as <strong>{client.user.email}</strong>.</p><div className="acct-actions"><button type="button" className="acct-btn" onClick={onSignIn}>Change password</button><button type="button" className="acct-btn" onClick={async () => { await client.signOut(); onClose() }}>Sign out</button></div><p className="acct-muted">Your data is handled as described in the <a href="#privacy">privacy notice</a>.</p></section>
+            <section className="acct-box" aria-labelledby="acct-sign-title"><span id="acct-sign-title" className="acct-label">Sign-in</span><p>Signed in as <strong>{client.user.email}</strong>.</p><UsernameBox key={state.profile?.username || 'none'} current={state.profile?.username} onSaved={changed} /><p className="acct-muted">Sign in with your email, your username or Google.</p><div className="acct-actions"><button type="button" className="acct-btn" onClick={onSignIn}>Change password</button><button type="button" className="acct-btn" onClick={async () => { await client.signOut(); onClose() }}>Sign out</button></div><p className="acct-muted">Your data is handled as described in the <a href="#privacy">privacy notice</a>.</p></section>
           </div>
         </>}
       </>}
