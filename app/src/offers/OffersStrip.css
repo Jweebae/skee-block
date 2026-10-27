@@ -25,7 +25,22 @@
 .offers-strip[data-count='3'] .offer-ghost{font-size:clamp(150px,17vw,220px)}
 
 .offer-card.is-open .offer-scrim{background:linear-gradient(177deg,#0B0B0BA6 0%,#0B0B0BEB 42%,#0B0B0BF7 100%)}
+.offer-card.is-open.has-photo .offer-scrim{background:linear-gradient(177deg,#0B0B0B8C 0%,#0B0B0BD9 40%,#0B0B0BF2 100%)}
 .offers-strip[data-count='1'] .offer-card.is-open .offer-body{max-width:none}
+/* Progressive blur: each layer blurs what is behind it a little more, and is masked to start a little lower,
+   so the photo melts from sharp at the top to soft under the words. Transitioning the radius (not the opacity)
+   keeps each layer's backdrop intact while it animates. */
+.offer-blur{position:absolute;inset:0;pointer-events:none}
+/* The radius travels in a custom property: a minifier rewrites a literal blur(0) to the invalid blur(). */
+.offer-blur i{--r:0px;position:absolute;inset:0;-webkit-backdrop-filter:blur(var(--r));backdrop-filter:blur(var(--r));transition:-webkit-backdrop-filter .55s ease,backdrop-filter .55s ease}
+.offer-blur i:nth-child(1){-webkit-mask-image:linear-gradient(to top,#000 0%,#000 55%,transparent 80%);mask-image:linear-gradient(to top,#000 0%,#000 55%,transparent 80%)}
+.offer-blur i:nth-child(2){-webkit-mask-image:linear-gradient(to top,#000 0%,#000 35%,transparent 62%);mask-image:linear-gradient(to top,#000 0%,#000 35%,transparent 62%)}
+.offer-blur i:nth-child(3){-webkit-mask-image:linear-gradient(to top,#000 0%,#000 18%,transparent 44%);mask-image:linear-gradient(to top,#000 0%,#000 18%,transparent 44%)}
+.offer-blur i:nth-child(4){-webkit-mask-image:linear-gradient(to top,#000 0%,transparent 26%);mask-image:linear-gradient(to top,#000 0%,transparent 26%)}
+.offer-card.is-open .offer-blur i:nth-child(1){--r:2px}
+.offer-card.is-open .offer-blur i:nth-child(2){--r:5px}
+.offer-card.is-open .offer-blur i:nth-child(3){--r:10px}
+.offer-card.is-open .offer-blur i:nth-child(4){--r:18px}
 .offer-scrim{position:absolute;inset:0;background:linear-gradient(177deg,#0B0B0B33 0%,#0B0B0BA6 44%,#0B0B0BF7 100%)}
 .offer-card:not(.has-photo) .offer-scrim{background:linear-gradient(177deg,#0B0B0B40 0%,#0B0B0B99 50%,#0B0B0BEB 100%)}
 /* The wide single banner keeps its words on the left, so the photo is darkened from that side too. */
@@ -125,6 +140,7 @@
 @media(prefers-reduced-motion:reduce){
   .offer-card,.offer-canvas img.is-shown,.offer-weave,.offer-tag::before,.offer-timer i,.offer-bar.is-active i{animation:none}
   .offer-card,.offer-cta i,.offer-canvas img,.offer-more,.offer-album,.offer-btn,.offer-btn i,.offer-cut{transition:none}
+  .offer-blur i{transition:none}
   .offer-card:hover .offer-sheen{animation:none}
   .offer-bar.is-active i{width:100%}
 }

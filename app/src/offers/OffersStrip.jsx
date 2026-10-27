@@ -87,6 +87,9 @@ function OfferCard({ offer, index, services }) {
         : <><span className="offer-weave" /><span className="offer-weave offer-weave-two" /></>}
       {percent > 0 && <span className="offer-ghost">{percent}<i>%</i></span>}
     </span>
+    {/* Only over a photo, and only once the card is open: the picture blurs from the bottom up so the
+        item list and the buttons stay legible. Four stacked layers make the ramp smooth. */}
+    {photos.length > 0 && <span className="offer-blur" aria-hidden="true"><i /><i /><i /><i /></span>}
     <span className="offer-scrim" aria-hidden="true" />
     <span className="offer-glow" aria-hidden="true" />
     <span className="offer-sheen" aria-hidden="true" />
