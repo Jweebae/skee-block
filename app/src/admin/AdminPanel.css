@@ -156,3 +156,8 @@
 .offer-items-editor li{display:grid;grid-template-columns:minmax(0,1fr) 130px auto;gap:10px;align-items:center}
 .offer-items-editor>button{justify-self:start}
 @media(max-width:760px){.offer-items-editor li{grid-template-columns:minmax(0,1fr) 110px}.offer-items-editor li button{grid-column:1/-1;justify-self:start}}
+.offer-menu-picker{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.offer-menu-picker>li{padding:12px 14px;border:1px solid #262626;border-radius:2px;background:#0F0F0F}
+.offer-menu-types{display:grid;gap:8px;margin:10px 0 0 26px;padding-left:14px;border-left:1px solid #262626}
+.offer-menu-types .admin-toggle{color:#A8A49D;font-size:13px}
+.offer-items-editor strong{color:#C9A96A;font-weight:500}

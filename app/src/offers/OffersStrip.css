@@ -144,3 +144,9 @@
   .offer-card:hover .offer-sheen{animation:none}
   .offer-bar.is-active i{width:100%}
 }
+.offer-btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.offer-btn:disabled:hover{border-color:#F2EFE93D;transform:none}
+.offer-chosen{display:inline-flex;align-items:center;font-size:12.5px;line-height:1.4;color:#8E8B85}
+.offer-chosen b{margin-left:6px;color:#C9A96A;font-weight:500}
+.offer-cut.is-chosen{border-color:#C9A96A;background:#C9A96A14}
+.offer-cut.is-chosen .offer-cut-go{color:#9DBFA4}

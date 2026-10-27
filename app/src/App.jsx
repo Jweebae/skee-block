@@ -366,7 +366,7 @@ export default function App() {
             Every service starts with a consultation and ends with a hot towel. Prices in Algerian dinar, add-ons chosen at booking.
           </p>
         </div>
-        <OffersStrip offers={settings.offers} services={visibleServices} />
+        <OffersStrip offers={settings.offers} services={visibleServices} menu={settings.addons} onBook={request => setBookingRequest(request)} />
         <div className="services-grid card-grid">
           {visibleServices.map(item => <div key={item.id} className="service-card-wrap"><button className={`card reveal ${item.id === 'ritual' ? 'service-card-featured' : 'service-card'}${item.photos?.length ? ' has-cut-photos' : ''}`} data-action="booking" data-service={item.id} type="button">
             <CutHoverPhotos photos={item.photos || []} name={item.name} />
@@ -758,7 +758,7 @@ export default function App() {
     <div className="mobile-booking-bar"><button className="mobile-book" data-action="booking">Book the chair <span aria-hidden="true">→</span></button><button className="mobile-chat" data-action="whatsapp" aria-label="WhatsApp Skee"><ChatIcon /></button></div>
       {isAccount && <AccountPage client={client} settings={settings} onClose={() => { window.location.hash = 'top' }} onBook={serviceId => setBookingRequest({ serviceId })} onSignIn={openAccount} />}
       <dialog ref={bookingDialogRef} className="booking-dialog" aria-labelledby="booking-title" onClose={() => setBookingRequest(null)}>
-        {bookingRequest && <BookingFlow settings={settings} initialServiceId={bookingRequest.serviceId} client={client} profileStatus={profileStatus} onSignIn={openAccount} onOpenAccount={() => { bookingDialogRef.current.close(); window.location.hash = 'account' }} onClose={() => bookingDialogRef.current.close()} />}
+        {bookingRequest && <BookingFlow settings={settings} initialServiceId={bookingRequest.serviceId} initialAddons={bookingRequest.addons} initialStep={bookingRequest.step ?? 0} client={client} profileStatus={profileStatus} onSignIn={openAccount} onOpenAccount={() => { bookingDialogRef.current.close(); window.location.hash = 'account' }} onClose={() => bookingDialogRef.current.close()} />}
       </dialog>
       <dialog ref={dialogRef} aria-labelledby="dialog-title" className="action-dialog" onClick={event => { if (event.target === event.currentTarget) dialogRef.current.close() }}>
         <button className="dialog-close" aria-label="Close" onClick={() => dialogRef.current.close()}>×</button>

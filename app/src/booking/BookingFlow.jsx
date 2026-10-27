@@ -26,14 +26,14 @@ function Check() {
   return <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12l5 5 9-10" /></svg>
 }
 
-export default function BookingFlow({ settings, initialServiceId, onClose, client, onSignIn, onOpenAccount, profileStatus }) {
+export default function BookingFlow({ settings, initialServiceId, initialAddons, initialStep = 0, onClose, client, onSignIn, onOpenAccount, profileStatus }) {
   const [draft] = useState(() => { const saved = readDraft(); return saved?.resume ? saved : null })
   const services = settings.services.filter(item => item.visible)
   const availableAddons = settings.addons.filter(item => item.visible).map(item => ({ ...item, types: item.types.filter(type => type.visible) })).filter(item => item.types.length)
   const [preferences, setPreferences] = useState(draft?.preferences ?? [])
-  const [step, setStep] = useState(draft ? 3 : 0)
+  const [step, setStep] = useState(draft ? 3 : initialStep)
   const [serviceId, setServiceId] = useState(draft?.serviceId ?? initialServiceId ?? '')
-  const [addonChoices, setAddonChoices] = useState(draft?.addonChoices ?? {})
+  const [addonChoices, setAddonChoices] = useState(draft?.addonChoices ?? initialAddons ?? {})
   const [dateId, setDateId] = useState(draft?.dateId ?? '')
   const [time, setTime] = useState(draft?.time ?? '')
   const [notes, setNotes] = useState(draft?.notes ?? '')

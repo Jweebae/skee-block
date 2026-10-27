@@ -1,0 +1,118 @@
+Create two separate, photorealistic luxury grooming product campaign images for 3kee, a private barber studio. These images will become the backgrounds of two promotional offer cards on a dark editorial website.
+
+GENERATE THE IMAGES, not a written description or a mockup of a website. Deliver two individual image files, never a collage, split screen or contact sheet.
+
+Generate Image 1 first. Then use that finished image as the visual reference for Image 2, preserving the exact appearance of the two shared products.
+
+ART DIRECTION
+
+The website uses near-black charcoal, warm bone typography and restrained gold details. Give the images a distinctive, expensive identity without repeating the usual black-and-gold advertising cliché.
+
+Think independent luxury fragrance campaign meets contemporary architectural still-life photography: sculptural, tactile, quiet and confident. Use cool platinum-white light, subtle blue-grey shadows and a restrained warm ivory highlight. All packaging must remain unmistakably BLACK. Create visual richness through material, silhouette and lighting rather than decorative colors.
+
+Every package is completely unbranded:
+NO text, letters, numbers, labels, embossed lettering, symbols, logos, monograms, price tags or watermarks anywhere. The words naming the offers below are instructions only and must NOT appear in the images.
+
+PACKAGING MATERIALS
+
+Use premium matte black surfaces with a fine, controlled tactile texture: finely grained ceramic coating, soft mineral texture and satin black anodized finishes. The surfaces should look expensive to touch.
+
+Texture must be subtle and believable—never coarse sandpaper, cracked concrete, lava, heavy scratches, dirt or distressed plastic. Avoid making everything the same material. Small changes in sheen should distinguish the products while preserving the all-black palette.
+
+Each product needs a distinctly different silhouette. No generic collection of identical pump bottles.
+
+SHARED PRODUCTS — IDENTICAL IN BOTH IMAGES
+
+1. FACE GOMMAGE:
+A compact, broad, low cylindrical jar, approximately 100 ml, with gently rounded shoulders and a thick flat screw lid. Fine matte black mineral finish, a precise narrow seam beneath the lid, completely blank.
+
+2. HAIR SERUM:
+A slender, approximately 30 ml black glass dropper bottle with a straight cylindrical body, subtly rounded shoulders and a black pipette cap. Satin opaque black glass, fine black rubber bulb, tiny controlled reflections along the edges, completely blank.
+
+These two packages must have the same shape, proportions, finish and scale in both images. They are the SAME products photographed in two related arrangements.
+
+IMAGE 1 — “BLOCK’S FAV” CLASSIC COLLECTION
+
+Show EXACTLY THREE product containers:
+
+• ONE classic protein hair treatment bottle:
+A tall, approximately 500 ml cylindrical bottle with broad rounded shoulders and a short, precise black screw cap. Robust and understated. Microtextured matte black body, slightly smoother satin cap. This is the tallest product.
+
+• ONE shared face gommage jar, as specified above.
+• ONE shared hair serum dropper bottle, as specified above.
+
+Arrange the three products as a carefully balanced sculptural group. The protein bottle is the anchor, the gommage jar sits slightly forward, and the serum adds a slender vertical accent. Small overlaps are welcome, but every product must be identifiable and physically plausible.
+
+This collection should communicate accessible premium grooming: precise, strong, tactile and beautifully made.
+
+IMAGE 2 — “PLAYBOY PACK” PREMIUM COLLECTION
+
+Show EXACTLY FOUR product packages:
+
+• ONE premium protein hair treatment bottle:
+Clearly different from the classic bottle. A tall, approximately 500 ml architectural bottle with a broad rectangular body, softly bevelled vertical edges, strong shoulders and a short square black cap. Fine matte black ceramic finish with a very restrained satin-black recessed side detail. More sculptural and elevated than the classic bottle, but entirely blank and entirely black.
+
+• ONE shared face gommage jar, identical to Image 1.
+• ONE shared hair serum dropper bottle, identical to Image 1.
+• ONE BLACK MASK package:
+A slim, upright rectangular black carton with crisp folded edges, subtle paper grain and a perfectly blank exterior. Approximately the height of the gommage jar plus its lid. It must clearly read as a premium retail box, not another bottle.
+
+Make the premium protein bottle the hero. Arrange the other three products around it with the black-mask carton clearly visible. The composition should feel richer than Image 1 through architecture, spacing and a slightly more striking lighting arrangement—not through gold decoration or extra objects.
+
+“Playboy Pack” is only the internal offer name. Do not include any Playboy branding, rabbit symbol, sexual imagery or printed title.
+
+COMPOSITION AND WEBSITE CROPPING
+
+Deliver each image in landscape 3:2 format, ideally 2200 × 1467 pixels, or the highest supported resolution at that ratio.
+
+The website automatically crops the image to fill differently sized cards on desktop and mobile. Compose with generous breathing room.
+
+Keep the complete product group approximately within:
+• 30–76% of the image width
+• 18–65% of the image height
+
+Position the visual weight slightly right of centre. Keep the leftmost 25% calm and relatively dark, and let the bottom 30% fall into a clean, quiet charcoal gradient.
+
+No critical cap, bottle edge or product detail should touch the frame. Allow generous margins for automatic cropping and a subtle slow zoom.
+
+The website places its own title, countdown, prices and buttons over the artwork. When the card expands, the website will gradually blur the background from bottom to top. Therefore:
+• Keep the important packaging silhouettes and attractive highlights in the upper-middle area.
+• Keep the lower part visually quiet.
+• Do NOT bake blur, promotional text, gradients shaped like UI panels or any website elements into the image.
+• All products should be sharp in the delivered image. The website handles the interactive blur.
+
+SET, LIGHTING AND CAMERA
+
+A seamless charcoal studio environment, with a dark graphite surface that meets a softly graduated background without a visible horizon line.
+
+Use a thin, low, matte charcoal plinth under part of the arrangement if it improves the composition. No elaborate scenery.
+
+Strong directional softbox light from the upper side, carefully flagged to produce elegant silver-white edge highlights and shaped shadows. Add a very subtle cool rim to separate the black packages from the background. A faint ivory reflection may warm one edge, but no obvious gold wash.
+
+Black-on-black photography must remain readable: preserve visible surface grain, cap seams, carton edges and three-dimensional volume. Do not crush the products into featureless silhouettes.
+
+Photographed as a real premium product campaign:
+85 mm lens, slightly elevated three-quarter viewpoint, controlled perspective, crisp packaging edges, realistic contact shadows, restrained reflections, deep enough focus to keep every package readable. Fine natural photographic texture and sophisticated tonal grading.
+
+Avoid excessive glossy CGI perfection. The result should look like an exceptionally art-directed physical studio photograph.
+
+STRICT EXCLUSIONS
+
+No people, faces, hands, hair strands, barber tools, scissors, razors, towels, flowers, leaves, stones, splashing liquid, smoke, mist, floating products, glowing particles, neon, ornate gold props or marble veining.
+
+No duplicate containers, extra packages, distorted geometry, impossible lids, transparent bodies, visible liquid, white labels or bright colored packaging.
+
+No typography or branding of any kind.
+
+FINAL QUALITY CHECK BEFORE DELIVERY
+
+Image 1 contains exactly THREE containers.
+Image 2 contains exactly FOUR packages.
+Gommage and serum are visually identical across both images.
+Classic and premium protein bottles are visibly different.
+The mask is an upright rectangular carton.
+Every package is fully black, blank and premium.
+All products remain readable against the dark background.
+Both images feel like one coherent campaign while having distinct compositions.
+
+Generate Image 1 now. When I say “next”, generate Image 2 using Image 1 as the reference.

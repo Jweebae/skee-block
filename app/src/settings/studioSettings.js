@@ -1,5 +1,5 @@
 import { BASE_CUT_PRICE, SERVICES, PREVIEW_ADDONS, TREATMENT_ADDONS } from '../booking/catalog'
-import { MAX_OFFERS, MAX_OFFER_ITEMS, MAX_OFFER_PHOTOS } from '../offers/offers'
+import { MAX_OFFERS, MAX_OFFER_ADDONS, MAX_OFFER_ITEMS, MAX_OFFER_PHOTOS } from '../offers/offers'
 
 export const SETTINGS_KEY = 'skee.studio-settings.v1'
 export const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
@@ -103,8 +103,18 @@ export function validateSettings(input) {
       used.add(entryId)
       return { id: entryId, name: text(entry.name, `${base.name} item`, 80), price: price(entry.price, `${base.name} item price`) }
     })
+    // Add-ons the offer includes, checked against the real menu so a deleted add-on cannot linger.
+    const picked = new Set()
+    const chosenAddons = (Array.isArray(item.addons) ? item.addons : []).slice(0, MAX_OFFER_ADDONS).flatMap(choice => {
+      const group = addons.find(entry => entry.id === choice?.addonId)
+      const type = group?.types.find(entry => entry.id === choice?.typeId)
+      if (!group || !type || picked.has(group.id)) return []
+      picked.add(group.id)
+      return [{ addonId: group.id, typeId: type.id }]
+    })
     return {
       ...base,
+      addons: chosenAddons,
       items,
       label: text(item.label || 'Offer', 'Offer tag', 24),
       serviceId: serviceIds.has(item.serviceId) ? item.serviceId : '',

@@ -11,8 +11,26 @@ export function liveOffers(offers, now) {
   return (offers || []).filter(offer => offer.visible !== false && (!offer.endsAt || offerEnd(offer) > now)).slice(0, MAX_OFFERS)
 }
 
-// What the offer is made of, as the owner listed it, so a client can see where the saving comes from.
-export const itemsTotal = offer => (offer?.items || []).reduce((sum, item) => sum + (Number(item.price) || 0), 0)
+export const MAX_OFFER_ADDONS = 20
+
+// What the offer is made of: add-ons picked from the studio menu (which are really applied to the booking),
+// then any extra lines the owner typed by hand. Menu prices are read fresh, so an edited menu is never out of date.
+export function offerLines(offer, menu = []) {
+  const lines = []
+  for (const choice of offer?.addons || []) {
+    const group = menu.find(item => item.id === choice.addonId && item.visible !== false)
+    const type = group?.types?.find(item => item.id === choice.typeId && item.visible !== false)
+    if (!group || !type) continue
+    lines.push({ id: `${group.id}-${type.id}`, name: type.name === 'Standard' ? group.name : `${group.name} · ${type.name}`, price: Number(type.price) || 0 })
+  }
+  for (const item of offer?.items || []) lines.push({ id: item.id, name: item.name, price: Number(item.price) || 0 })
+  return lines
+}
+
+export const linesTotal = lines => lines.reduce((sum, line) => sum + (Number(line.price) || 0), 0)
+
+// Booking takes the add-ons as a map of group to chosen type.
+export const offerAddonMap = offer => Object.fromEntries((offer?.addons || []).map(choice => [choice.addonId, choice.typeId]))
 
 export function offerPercent(offer) {
   const was = Number(offer?.oldPrice) || 0

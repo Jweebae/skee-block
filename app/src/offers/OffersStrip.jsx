@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { countdownStep, countdownText, offerEnd, offerPercent, liveOffers } from './offers'
+import { countdownStep, countdownText, offerAddonMap, offerEnd, offerLines, offerPercent, liveOffers } from './offers'
 import './OffersStrip.css'
 
 const SLIDE_MS = 4600
@@ -34,14 +34,17 @@ function useCountdown(endsAt) {
   return endsAt ? countdownText(endsAt, now) : ''
 }
 
-function OfferCard({ offer, index, services }) {
+function OfferCard({ offer, index, services, menu, onBook }) {
   const card = useRef(null)
   const [hovered, setHovered] = useState(false)
   const [lit, setLit] = useState(false) // a finger held on the card, where there is no hover
   const [open, setOpen] = useState(false)
   const [album, setAlbum] = useState(false)
   const photos = offer.photos || []
-  const items = offer.items || []
+  const lines = offerLines(offer, menu)
+  // The cut is the one thing the offer leaves open, so Book now waits until it is picked.
+  const [cutId, setCutId] = useState(offer.serviceId || '')
+  const cut = services.find(item => item.id === cutId)
   const [shown, setShown] = usePhotoCycle(photos.length, hovered || open)
   const left = useCountdown(offerEnd(offer))
   const percent = offerPercent(offer)
@@ -67,6 +70,17 @@ function OfferCard({ offer, index, services }) {
 
   function toggle() {
     setOpen(value => !value)
+    setAlbum(false)
+  }
+
+  // Everything else in the offer is already decided, so booking opens straight at Date & time.
+  function book() {
+    if (!cutId) return
+    onBook({ serviceId: cutId, addons: offerAddonMap(offer), step: 2 })
+  }
+
+  function chooseCut(id) {
+    setCutId(id)
     setAlbum(false)
   }
 
@@ -119,8 +133,8 @@ function OfferCard({ offer, index, services }) {
       <div className="offer-more" data-open={open}>
         <div className="offer-more-clip">
           <div className="offer-more-pad">
-            {items.length > 0 && <ul className="offer-items">
-              {items.map(item => <li key={item.id}><span>{item.name}</span>{Number(item.price) > 0 && <b>{item.price} DA</b>}</li>)}
+            {lines.length > 0 && <ul className="offer-items">
+              {lines.map(line => <li key={line.id}><span>{line.name}</span>{line.price > 0 && <b>{line.price} DA</b>}</li>)}
             </ul>}
 
             {(was > 0 || now > 0) && <div className="offer-total">
@@ -129,19 +143,26 @@ function OfferCard({ offer, index, services }) {
             </div>}
 
             <div className="offer-actions">
-              <button type="button" className="offer-btn offer-btn-primary" data-action="booking" data-service={offer.serviceId || undefined}>Book now <i aria-hidden="true">→</i></button>
-              <button type="button" className="offer-btn" aria-expanded={album} onClick={() => setAlbum(value => !value)}>{album ? 'Hide cuts' : 'Choose cut'} <i aria-hidden="true">⌄</i></button>
+              <button type="button" className="offer-btn offer-btn-primary" disabled={!cutId} onClick={book}>Book now <i aria-hidden="true">→</i></button>
+              <button type="button" className="offer-btn" aria-expanded={album} onClick={() => setAlbum(value => !value)}>{cut ? 'Change cut' : 'Choose cut'} <i aria-hidden="true">⌄</i></button>
+              <span className="offer-chosen" role="status">{cut ? <>Cut: <b>{cut.name}</b></> : 'Choose your cut to unlock booking'}</span>
             </div>
 
             <div className="offer-album" data-open={album}>
               <div className="offer-more-clip">
                 <div className="offer-album-grid">
-                  {services.map(cut => <button key={cut.id} type="button" className="offer-cut" data-action="booking" data-service={cut.id}>
-                    {cut.photos?.[0] && <img src={cut.photos[0]} alt="" loading="lazy" decoding="async" />}
+                  {services.map(option => <button
+                    key={option.id}
+                    type="button"
+                    className={`offer-cut${option.id === cutId ? ' is-chosen' : ''}`}
+                    aria-pressed={option.id === cutId}
+                    onClick={() => chooseCut(option.id)}
+                  >
+                    {option.photos?.[0] && <img src={option.photos[0]} alt="" loading="lazy" decoding="async" />}
                     <span className="offer-cut-copy">
-                      <span className="serif offer-cut-name">{cut.name}</span>
-                      {cut.description && <span className="offer-cut-text">{cut.description}</span>}
-                      <span className="offer-cut-foot"><i>{cut.duration} min</i><i className="offer-cut-go">Book →</i></span>
+                      <span className="serif offer-cut-name">{option.name}</span>
+                      {option.description && <span className="offer-cut-text">{option.description}</span>}
+                      <span className="offer-cut-foot"><i>{option.duration} min</i><i className="offer-cut-go">{option.id === cutId ? 'Chosen ✓' : 'Choose'}</i></span>
                     </span>
                   </button>)}
                   {!services.length && <p className="offer-cut-empty">The menu is being updated. Tap Book now to reach Skee.</p>}
@@ -165,7 +186,7 @@ function OfferCard({ offer, index, services }) {
   </article>
 }
 
-export default function OffersStrip({ offers, services = [] }) {
+export default function OffersStrip({ offers, services = [], menu = [], onBook }) {
   const [now, setNow] = useState(() => Date.now())
   // One slow timer retires an offer whose deadline passes while the page is open.
   useEffect(() => {
@@ -175,6 +196,6 @@ export default function OffersStrip({ offers, services = [] }) {
   const live = liveOffers(offers, now)
   if (!live.length) return null
   return <div className="offers-strip" data-count={live.length} aria-label="Current offers">
-    {live.map((offer, index) => <OfferCard key={offer.id} offer={offer} index={index} services={services} />)}
+    {live.map((offer, index) => <OfferCard key={offer.id} offer={offer} index={index} services={services} menu={menu} onBook={onBook} />)}
   </div>
 }
