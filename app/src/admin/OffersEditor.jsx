@@ -1,5 +1,5 @@
 import CutPhotosEditor from './CutPhotosEditor'
-import { MAX_OFFERS, MAX_OFFER_PHOTOS, offerPercent } from '../offers/offers'
+import { MAX_OFFERS, MAX_OFFER_ITEMS, MAX_OFFER_PHOTOS, itemsTotal, offerPercent } from '../offers/offers'
 
 // Flash deals shown above the menu on the homepage. One offer fills the width of all three service cards, two share
 // it, three line up one above each card — so the number of offers is also the layout choice.
@@ -12,6 +12,9 @@ export default function OffersEditor({ offers, services, onUpdate, onDelete, all
     <div className="admin-editor-list">{offers.map((offer, index) => {
       const percent = offerPercent(offer)
       const set = field => event => onUpdate(offer.id, field, event.target.value)
+      const items = offer.items || []
+      const sum = itemsTotal(offer)
+      const setItem = (itemId, field, value) => onUpdate(offer.id, 'items', items.map(entry => (entry.id === itemId ? { ...entry, [field]: value } : entry)))
       return <section className="admin-editor-card" key={offer.id} aria-label={`Offer ${index + 1}`}>
         <div className="admin-card-heading"><span className="lbl">Offer {String(index + 1).padStart(2, '0')}</span><label className="admin-toggle"><input type="checkbox" checked={offer.visible} onChange={event => onUpdate(offer.id, 'visible', event.target.checked)} />Showing on the homepage</label></div>
         <div className="admin-field-grid">
@@ -25,6 +28,17 @@ export default function OffersEditor({ offers, services, onUpdate, onDelete, all
           <label>Offer price · DA<input type="number" min="0" max="100000" step="50" value={offer.newPrice || ''} placeholder="600" onChange={set('newPrice')} />{percent > 0 && <small>Shown as −{percent}% on the card.</small>}</label>
           <label>Ends on<input type="datetime-local" value={offer.endsAt || ''} onChange={set('endsAt')} /><small>Leave empty to run until you hide it. The countdown is in M’Sila time, and the offer disappears by itself when it ends.</small></label>
         </div>
+        <div className="admin-full-field offer-items-editor">
+          <span>What the client gets · {items.length}/{MAX_OFFER_ITEMS} <small>Each line shows as its own row when a client opens the offer. Leave a price empty to show the line without one.</small></span>
+          {items.length > 0 && <ul>{items.map((entry, position) => <li key={entry.id}>
+            <input aria-label={`Item ${position + 1} name`} maxLength={80} placeholder="Protein treatment" value={entry.name} onChange={event => setItem(entry.id, 'name', event.target.value)} />
+            <input aria-label={`Item ${position + 1} price`} type="number" min="0" max="100000" step="50" placeholder="DA" value={entry.price || ''} onChange={event => setItem(entry.id, 'price', event.target.value)} />
+            <button type="button" className="admin-outline admin-delete" onClick={() => onUpdate(offer.id, 'items', items.filter(other => other.id !== entry.id))}>Remove</button>
+          </li>)}</ul>}
+          {items.length < MAX_OFFER_ITEMS && <button type="button" className="admin-outline" onClick={() => onUpdate(offer.id, 'items', [...items, { id: `item-${crypto.randomUUID()}`, name: '', price: 0 }])}>+ Add item</button>}
+          {sum > 0 && <small>These lines add up to {sum} DA{Number(offer.oldPrice) > 0 && sum !== Number(offer.oldPrice) ? `, but the usual price below says ${offer.oldPrice} DA. Clients see both, so keep them in step.` : '.'}</small>}
+        </div>
+
         {allowPhotos && <CutPhotosEditor cut={offer} onChange={photos => onUpdate(offer.id, 'photos', photos)} folder={`offers/${offer.id}`} max={MAX_OFFER_PHOTOS} title="Offer photos" hint="Fill the whole card. Several photos fade from one to the next with a progress bar. With no photo the card animates on its own." />}
         <div className="admin-card-actions"><button type="button" className="admin-outline admin-delete" onClick={() => onDelete({ collection: 'offers', id: offer.id, name: offer.name, kind: 'offer' })}>Delete offer</button></div>
       </section>

@@ -1,5 +1,5 @@
 import { BASE_CUT_PRICE, SERVICES, PREVIEW_ADDONS, TREATMENT_ADDONS } from '../booking/catalog'
-import { MAX_OFFERS, MAX_OFFER_PHOTOS } from '../offers/offers'
+import { MAX_OFFERS, MAX_OFFER_ITEMS, MAX_OFFER_PHOTOS } from '../offers/offers'
 
 export const SETTINGS_KEY = 'skee.studio-settings.v1'
 export const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
@@ -96,8 +96,16 @@ export function validateSettings(input) {
     const oldPrice = price(item.oldPrice, `${base.name} old price`)
     const newPrice = price(item.newPrice, `${base.name} offer price`)
     if (oldPrice > 0 && newPrice > 0 && newPrice >= oldPrice) throw new Error(`${base.name}: the offer price must be lower than the old price.`)
+    const used = new Set()
+    const items = (Array.isArray(item.items) ? item.items : []).slice(0, MAX_OFFER_ITEMS).map(entry => {
+      const entryId = text(entry?.id, 'Item ID', 80)
+      if (!/^[a-zA-Z0-9-]+$/.test(entryId) || used.has(entryId)) throw new Error(`${base.name}: each item in the offer needs its own ID.`)
+      used.add(entryId)
+      return { id: entryId, name: text(entry.name, `${base.name} item`, 80), price: price(entry.price, `${base.name} item price`) }
+    })
     return {
       ...base,
+      items,
       label: text(item.label || 'Offer', 'Offer tag', 24),
       serviceId: serviceIds.has(item.serviceId) ? item.serviceId : '',
       photos: photoList(item.photos, base.name).slice(0, MAX_OFFER_PHOTOS),

@@ -34,31 +34,52 @@ function useCountdown(endsAt) {
   return endsAt ? countdownText(endsAt, now) : ''
 }
 
-function OfferCard({ offer, index }) {
+function OfferCard({ offer, index, services }) {
   const card = useRef(null)
   const [hovered, setHovered] = useState(false)
+  const [lit, setLit] = useState(false) // a finger held on the card, where there is no hover
+  const [open, setOpen] = useState(false)
+  const [album, setAlbum] = useState(false)
   const photos = offer.photos || []
-  const [shown, setShown] = usePhotoCycle(photos.length, hovered)
+  const items = offer.items || []
+  const [shown, setShown] = usePhotoCycle(photos.length, hovered || open)
   const left = useCountdown(offerEnd(offer))
   const percent = offerPercent(offer)
   const was = Number(offer.oldPrice) || 0
   const now = Number(offer.newPrice) || 0
 
-  // The gold glow follows the pointer. Written straight to the element so moving the mouse never re-renders.
+  // The gold pool follows the pointer — a mouse anywhere on the card, or a finger while it stays down.
+  // Written straight to the element so moving never costs a re-render.
   function follow(event) {
     const box = card.current?.getBoundingClientRect()
     if (!box) return
     card.current.style.setProperty('--mx', `${((event.clientX - box.left) / box.width) * 100}%`)
     card.current.style.setProperty('--my', `${((event.clientY - box.top) / box.height) * 100}%`)
   }
+  function press(event) {
+    follow(event)
+    if (event.pointerType !== 'mouse') setLit(true)
+  }
+  function release() {
+    setLit(false)
+    card.current?.style.removeProperty('--mx')
+  }
+
+  function toggle() {
+    setOpen(value => !value)
+    setAlbum(false)
+  }
 
   return <article
     ref={card}
-    className={`offer-card${photos.length ? ' has-photo' : ''}`}
+    className={`offer-card${photos.length ? ' has-photo' : ''}${open ? ' is-open' : ''}${lit ? ' is-lit' : ''}`}
     style={{ '--delay': `${index * 90}ms` }}
+    onPointerDown={press}
     onPointerMove={follow}
+    onPointerUp={release}
+    onPointerCancel={release}
     onPointerEnter={() => setHovered(true)}
-    onPointerLeave={() => { setHovered(false); card.current?.style.removeProperty('--mx') }}
+    onPointerLeave={() => { setHovered(false); release() }}
   >
     <span className="offer-canvas" aria-hidden="true">
       {photos.length
@@ -70,8 +91,9 @@ function OfferCard({ offer, index }) {
     <span className="offer-glow" aria-hidden="true" />
     <span className="offer-sheen" aria-hidden="true" />
 
-    <button type="button" className="offer-hit" data-action="booking" data-service={offer.serviceId || undefined}>
-      <span className="visually-hidden">Book — {offer.name}</span>
+    {/* Covers the card behind the words: tapping anywhere empty opens the deal, and closes it again. */}
+    <button type="button" className="offer-hit" aria-expanded={open} onClick={toggle}>
+      <span className="visually-hidden">{open ? 'Close' : 'See'} the deal — {offer.name}</span>
     </button>
 
     <div className="offer-body">
@@ -82,12 +104,49 @@ function OfferCard({ offer, index }) {
       </div>
       <h3 className="serif offer-title">{offer.name}</h3>
       {offer.description && <p className="offer-text">{offer.description}</p>}
+
       <div className="offer-foot">
         <span className="offer-prices">
           {was > 0 && now > 0 && <s>{was} DA</s>}
           {(now > 0 || was > 0) && <strong>{now > 0 ? now : was} DA</strong>}
         </span>
-        <span className="offer-cta">Book this <i aria-hidden="true">→</i></span>
+        <span className="offer-cta">{open ? 'Close' : 'See the deal'} <i aria-hidden="true">⌄</i></span>
+      </div>
+
+      <div className="offer-more" data-open={open}>
+        <div className="offer-more-clip">
+          <div className="offer-more-pad">
+            {items.length > 0 && <ul className="offer-items">
+              {items.map(item => <li key={item.id}><span>{item.name}</span>{Number(item.price) > 0 && <b>{item.price} DA</b>}</li>)}
+            </ul>}
+
+            {(was > 0 || now > 0) && <div className="offer-total">
+              {was > 0 && <span>Usual total <s>{was} DA</s></span>}
+              <span className="offer-total-now">Offer price <strong>{now > 0 ? now : was} DA</strong></span>
+            </div>}
+
+            <div className="offer-actions">
+              <button type="button" className="offer-btn offer-btn-primary" data-action="booking" data-service={offer.serviceId || undefined}>Book now <i aria-hidden="true">→</i></button>
+              <button type="button" className="offer-btn" aria-expanded={album} onClick={() => setAlbum(value => !value)}>{album ? 'Hide cuts' : 'Choose cut'} <i aria-hidden="true">⌄</i></button>
+            </div>
+
+            <div className="offer-album" data-open={album}>
+              <div className="offer-more-clip">
+                <div className="offer-album-grid">
+                  {services.map(cut => <button key={cut.id} type="button" className="offer-cut" data-action="booking" data-service={cut.id}>
+                    {cut.photos?.[0] && <img src={cut.photos[0]} alt="" loading="lazy" decoding="async" />}
+                    <span className="offer-cut-copy">
+                      <span className="serif offer-cut-name">{cut.name}</span>
+                      {cut.description && <span className="offer-cut-text">{cut.description}</span>}
+                      <span className="offer-cut-foot"><i>{cut.duration} min</i><i className="offer-cut-go">Book →</i></span>
+                    </span>
+                  </button>)}
+                  {!services.length && <p className="offer-cut-empty">The menu is being updated. Tap Book now to reach Skee.</p>}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -98,12 +157,12 @@ function OfferCard({ offer, index }) {
         className={`offer-bar${position === shown ? ' is-active' : ''}`}
         aria-label={`Show photo ${position + 1} of ${photos.length}`}
         onClick={() => setShown(position)}
-      ><i key={`${position}-${shown}-${hovered}`} style={{ animationDuration: `${SLIDE_MS}ms`, animationPlayState: hovered ? 'paused' : 'running' }} /></button>)}
+      ><i key={`${position}-${shown}-${hovered}-${open}`} style={{ animationDuration: `${SLIDE_MS}ms`, animationPlayState: hovered || open ? 'paused' : 'running' }} /></button>)}
     </span>}
   </article>
 }
 
-export default function OffersStrip({ offers }) {
+export default function OffersStrip({ offers, services = [] }) {
   const [now, setNow] = useState(() => Date.now())
   // One slow timer retires an offer whose deadline passes while the page is open.
   useEffect(() => {
@@ -113,6 +172,6 @@ export default function OffersStrip({ offers }) {
   const live = liveOffers(offers, now)
   if (!live.length) return null
   return <div className="offers-strip" data-count={live.length} aria-label="Current offers">
-    {live.map((offer, index) => <OfferCard key={offer.id} offer={offer} index={index} />)}
+    {live.map((offer, index) => <OfferCard key={offer.id} offer={offer} index={index} services={services} />)}
   </div>
 }

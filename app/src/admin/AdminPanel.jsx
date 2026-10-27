@@ -62,7 +62,7 @@ export default function AdminPanel({ settings, storageError, onSave, owner = nul
     const item = collection === 'services'
       ? { id, name: 'New cut', description: '', category: 'Cut', duration: 30, preferences: [], photos: [], visible: true }
       : collection === 'offers'
-        ? { id, label: 'Flash deal', name: 'New offer', description: '', serviceId: '', photos: [], oldPrice: 0, newPrice: 0, endsAt: '', visible: true }
+        ? { id, label: 'Flash deal', name: 'New offer', description: '', serviceId: '', items: [], photos: [], oldPrice: 0, newPrice: 0, endsAt: '', visible: true }
         : { id, name: 'New add-on', description: '', types: [{ id: `type-${crypto.randomUUID()}`, name: 'Standard', description: '', duration: 5, price: 0, visible: true }], visible: true }
     setDraft(current => ({ ...current, [collection]: [...current[collection], item] }))
     setMessage('')

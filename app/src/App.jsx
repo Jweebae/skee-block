@@ -366,7 +366,7 @@ export default function App() {
             Every service starts with a consultation and ends with a hot towel. Prices in Algerian dinar, add-ons chosen at booking.
           </p>
         </div>
-        <OffersStrip offers={settings.offers} />
+        <OffersStrip offers={settings.offers} services={visibleServices} />
         <div className="services-grid card-grid">
           {visibleServices.map(item => <div key={item.id} className="service-card-wrap"><button className={`card reveal ${item.id === 'ritual' ? 'service-card-featured' : 'service-card'}${item.photos?.length ? ' has-cut-photos' : ''}`} data-action="booking" data-service={item.id} type="button">
             <CutHoverPhotos photos={item.photos || []} name={item.name} />

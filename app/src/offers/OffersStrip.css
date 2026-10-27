@@ -1,6 +1,6 @@
 /* Flash deals above the menu. Six columns so an offer lines up exactly with the service cards underneath:
    one offer spans all three, two share it (a card and a half each), three sit one above each card. */
-.offers-strip{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:24px;margin-bottom:24px}
+.offers-strip{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));align-items:start;gap:24px;margin-bottom:24px}
 .offers-strip[data-count='1']>.offer-card{grid-column:span 6;min-height:300px}
 .offers-strip[data-count='2']>.offer-card{grid-column:span 3;min-height:340px}
 .offers-strip[data-count='3']>.offer-card{grid-column:span 2;min-height:360px}
@@ -24,6 +24,8 @@
 .offer-ghost i{font-style:normal;font-size:.44em}
 .offers-strip[data-count='3'] .offer-ghost{font-size:clamp(150px,17vw,220px)}
 
+.offer-card.is-open .offer-scrim{background:linear-gradient(177deg,#0B0B0BA6 0%,#0B0B0BEB 42%,#0B0B0BF7 100%)}
+.offers-strip[data-count='1'] .offer-card.is-open .offer-body{max-width:none}
 .offer-scrim{position:absolute;inset:0;background:linear-gradient(177deg,#0B0B0B33 0%,#0B0B0BA6 44%,#0B0B0BF7 100%)}
 .offer-card:not(.has-photo) .offer-scrim{background:linear-gradient(177deg,#0B0B0B40 0%,#0B0B0B99 50%,#0B0B0BEB 100%)}
 /* The wide single banner keeps its words on the left, so the photo is darkened from that side too. */
@@ -31,12 +33,12 @@
 
 /* A gold pool that follows the pointer, and a single sheen that crosses the card on hover. */
 .offer-glow{position:absolute;inset:0;opacity:0;background:radial-gradient(240px circle at var(--mx) var(--my),#C9A96A52,transparent 68%);mix-blend-mode:screen;transition:opacity .45s ease}
-.offer-card:hover .offer-glow{opacity:1}
+.offer-card:hover .offer-glow,.offer-card.is-lit .offer-glow{opacity:1}
 .offer-sheen{position:absolute;top:0;bottom:0;width:48%;left:-60%;background:linear-gradient(100deg,transparent,#F2EFE91F 48%,transparent);transform:skewX(-14deg)}
 .offer-card:hover .offer-sheen{animation:offerSheen 1.15s cubic-bezier(.3,.7,.3,1) .05s}
 @keyframes offerSheen{to{left:125%}}
 
-.offer-hit{position:absolute;inset:0;z-index:4;padding:0;border:0;background:none;cursor:pointer}
+.offer-hit{position:absolute;inset:0;z-index:1;padding:0;border:0;background:none;cursor:pointer}
 .offer-hit:focus-visible{outline:2px solid #C9A96A;outline-offset:-6px}
 
 .offer-body{position:relative;z-index:2;display:flex;flex-direction:column;align-items:flex-start;gap:10px;justify-content:flex-end;width:100%;min-width:0;padding:clamp(22px,2.6vw,34px);pointer-events:none}
@@ -60,8 +62,9 @@
 .offer-prices s{color:#8E8B85;font-size:15px;text-decoration-thickness:1px}
 .offer-prices strong{color:#C9A96A;font:400 clamp(26px,2.4vw,32px)/1 'Bodoni Moda',Georgia,serif}
 .offer-cta{display:inline-flex;align-items:center;gap:9px;color:#F2EFE9;font:500 11px/1 'Inter Tight',sans-serif;letter-spacing:.18em;text-transform:uppercase}
-.offer-cta i{font-style:normal;transition:transform .4s cubic-bezier(.2,.7,.1,1);color:#C9A96A}
-.offer-card:hover .offer-cta i{transform:translateX(7px)}
+.offer-cta i{font-style:normal;font-size:14px;line-height:1;transition:transform .4s cubic-bezier(.2,.7,.1,1);color:#C9A96A}
+.offer-card:hover .offer-cta i{transform:translateY(3px)}
+.offer-card.is-open .offer-cta i,.offer-card.is-open:hover .offer-cta i{transform:rotate(180deg)}
 
 .offer-bars{position:absolute;left:0;right:0;bottom:0;z-index:5;display:flex;gap:3px;padding:0 3px 3px}
 .offer-bar{position:relative;flex:1;height:14px;padding:0;border:0;background:none;cursor:pointer}
@@ -70,6 +73,43 @@
 .offer-bar.is-active i{animation:offerFill linear forwards}
 @keyframes offerFill{from{width:0}to{width:100%}}
 .offer-bar:focus-visible{outline:1px solid #C9A96A;outline-offset:2px}
+
+/* Everything below the price line opens on a tap. The rows animate from 0fr to 1fr so no height is hard-coded. */
+.offer-more,.offer-album{display:grid;grid-template-rows:0fr;width:100%;transition:grid-template-rows .55s cubic-bezier(.2,.7,.1,1)}
+.offer-more[data-open='true'],.offer-album[data-open='true']{grid-template-rows:1fr}
+.offer-more-clip{overflow:hidden;min-height:0}
+.offer-more-pad{padding-top:20px}
+
+.offer-items{list-style:none;margin:0;padding:0;display:grid;gap:1px;overflow:hidden;border:1px solid #FFFFFF1F;border-radius:2px;background:#FFFFFF1F}
+.offer-items li{display:flex;align-items:baseline;justify-content:space-between;gap:14px;padding:11px 15px;background:#0B0B0BD9;color:#DAD6CE;font-size:14px;line-height:1.4}
+.offer-items b{flex:none;color:#F2EFE9;font-weight:500;font-variant-numeric:tabular-nums}
+
+.offer-total{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 24px;margin-top:16px;font:500 11px/1.2 'Inter Tight',sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#8E8B85}
+.offer-total s{margin-left:8px;font-size:14px;letter-spacing:0;text-decoration-thickness:1px}
+.offer-total-now{color:#C9A96A}
+.offer-total strong{margin-left:9px;font:400 24px/1 'Bodoni Moda',Georgia,serif;letter-spacing:0;color:#C9A96A}
+
+.offer-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px;pointer-events:auto}
+.offer-btn{display:inline-flex;align-items:center;gap:9px;min-height:46px;padding:0 20px;border:1px solid #F2EFE93D;border-radius:2px;background:#0B0B0B99;color:#F2EFE9;font:500 11px/1 'Inter Tight',sans-serif;letter-spacing:.16em;text-transform:uppercase;cursor:pointer;transition:background .3s,border-color .3s,transform .3s}
+.offer-btn:hover{border-color:#C9A96A;transform:translateY(-2px)}
+.offer-btn:focus-visible{outline:2px solid #C9A96A;outline-offset:3px}
+.offer-btn i{font-style:normal;transition:transform .35s cubic-bezier(.2,.7,.1,1)}
+.offer-btn[aria-expanded='true'] i{transform:rotate(180deg)}
+.offer-btn-primary{background:#F2EFE9;color:#0B0B0B;border-color:#F2EFE9;font-weight:600}
+.offer-btn-primary:hover{background:#fff}
+.offer-btn-primary:hover i{transform:translateX(5px)}
+
+.offer-album-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;padding-top:16px}
+.offer-cut{display:flex;flex-direction:column;min-width:0;padding:0;overflow:hidden;border:1px solid #FFFFFF26;border-radius:2px;background:#0B0B0BB3;color:#F2EFE9;text-align:left;cursor:pointer;pointer-events:auto;transition:border-color .3s,background .3s,transform .3s cubic-bezier(.2,.7,.1,1)}
+.offer-cut:hover{border-color:#C9A96A;background:#131313F2;transform:translateY(-3px)}
+.offer-cut:focus-visible{outline:2px solid #C9A96A;outline-offset:2px}
+.offer-cut img{width:100%;height:84px;object-fit:cover}
+.offer-cut-copy{display:grid;gap:6px;padding:13px 14px}
+.offer-cut-name{font-size:17px;line-height:1.2;color:#F2EFE9;text-wrap:balance}
+.offer-cut-text{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:12.5px;line-height:1.5;color:#A8A49D}
+.offer-cut-foot{display:flex;justify-content:space-between;gap:10px;margin-top:2px;font:500 10px/1 'Inter Tight',sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#8E8B85}
+.offer-cut-go{color:#C9A96A}
+.offer-cut-empty{grid-column:1/-1;margin:0;color:#8E8B85;font-size:14px}
 
 @media(min-width:761px) and (max-width:1100px){
   .offers-strip{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -84,7 +124,7 @@
 }
 @media(prefers-reduced-motion:reduce){
   .offer-card,.offer-canvas img.is-shown,.offer-weave,.offer-tag::before,.offer-timer i,.offer-bar.is-active i{animation:none}
-  .offer-card,.offer-cta i,.offer-canvas img{transition:none}
+  .offer-card,.offer-cta i,.offer-canvas img,.offer-more,.offer-album,.offer-btn,.offer-btn i,.offer-cut{transition:none}
   .offer-card:hover .offer-sheen{animation:none}
   .offer-bar.is-active i{width:100%}
 }

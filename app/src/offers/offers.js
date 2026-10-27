@@ -2,6 +2,7 @@
 // the menu does. Algeria keeps UTC+1 all year, so an end time typed by the owner is read in M'Sila time.
 export const MAX_OFFERS = 3
 export const MAX_OFFER_PHOTOS = 5
+export const MAX_OFFER_ITEMS = 8
 
 export const offerEnd = offer => (offer?.endsAt ? new Date(`${offer.endsAt}:00+01:00`).getTime() : 0)
 
@@ -9,6 +10,9 @@ export const offerEnd = offer => (offer?.endsAt ? new Date(`${offer.endsAt}:00+0
 export function liveOffers(offers, now) {
   return (offers || []).filter(offer => offer.visible !== false && (!offer.endsAt || offerEnd(offer) > now)).slice(0, MAX_OFFERS)
 }
+
+// What the offer is made of, as the owner listed it, so a client can see where the saving comes from.
+export const itemsTotal = offer => (offer?.items || []).reduce((sum, item) => sum + (Number(item.price) || 0), 0)
 
 export function offerPercent(offer) {
   const was = Number(offer?.oldPrice) || 0
