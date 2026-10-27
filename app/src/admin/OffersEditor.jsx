@@ -39,7 +39,7 @@ export default function OffersEditor({ offers, services, onUpdate, onDelete, all
           {sum > 0 && <small>These lines add up to {sum} DA{Number(offer.oldPrice) > 0 && sum !== Number(offer.oldPrice) ? `, but the usual price below says ${offer.oldPrice} DA. Clients see both, so keep them in step.` : '.'}</small>}
         </div>
 
-        {allowPhotos && <CutPhotosEditor cut={offer} onChange={photos => onUpdate(offer.id, 'photos', photos)} folder={`offers/${offer.id}`} max={MAX_OFFER_PHOTOS} title="Offer photos" hint="Fill the whole card. Several photos fade from one to the next with a progress bar. With no photo the card animates on its own." />}
+        {allowPhotos && <CutPhotosEditor cut={offer} onChange={photos => onUpdate(offer.id, 'photos', photos)} folder={`offers/${offer.id}`} max={MAX_OFFER_PHOTOS} maxSide={2200} title="Offer photos" hint="Fill the whole card. Several photos fade from one to the next with a progress bar. With no photo the card animates on its own." />}
         <div className="admin-card-actions"><button type="button" className="admin-outline admin-delete" onClick={() => onDelete({ collection: 'offers', id: offer.id, name: offer.name, kind: 'offer' })}>Delete offer</button></div>
       </section>
     })}</div>

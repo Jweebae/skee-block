@@ -4,11 +4,11 @@ import { MAX_CUT_PHOTOS } from '../settings/studioSettings'
 
 // Owners add photos to a cut. Each photo is shrunk in the browser (at most 1400 px, WebP or JPEG under 1 MB),
 // uploaded to the public `cut-photos` bucket, and listed on the cut; "Save all changes" publishes the list.
-const MAX_SIDE = 1400
+const MAX_SIDE = 1400 // a service card never shows a photo wider than this; offers pass a larger side
 
-async function shrink(file) {
+async function shrink(file, maxSide) {
   const bitmap = await createImageBitmap(file)
-  const scale = Math.min(1, MAX_SIDE / Math.max(bitmap.width, bitmap.height))
+  const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height))
   const canvas = document.createElement('canvas')
   canvas.width = Math.round(bitmap.width * scale)
   canvas.height = Math.round(bitmap.height * scale)
@@ -21,7 +21,7 @@ async function shrink(file) {
   return blob
 }
 
-export default function CutPhotosEditor({ cut, onChange, folder = cut.id, max = MAX_CUT_PHOTOS, title = 'Photos', hint = 'Shown when a client hovers over this cut on the homepage and in booking (a Photos button on phones). The first photo shows first.' }) {
+export default function CutPhotosEditor({ cut, onChange, folder = cut.id, max = MAX_CUT_PHOTOS, maxSide = MAX_SIDE, title = 'Photos', hint = 'Shown when a client hovers over this cut on the homepage and in booking (a Photos button on phones). The first photo shows first.' }) {
   const photos = cut.photos || []
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -34,7 +34,7 @@ export default function CutPhotosEditor({ cut, onChange, folder = cut.id, max = 
     try {
       for (const file of files) {
         if (!file.type.startsWith('image/')) continue
-        const blob = await shrink(file)
+        const blob = await shrink(file, maxSide)
         const path = `${folder}/${crypto.randomUUID()}.${blob.type === 'image/webp' ? 'webp' : 'jpg'}`
         const { error: problem } = await supabase.storage.from('cut-photos').upload(path, blob, { contentType: blob.type, cacheControl: '31536000', upsert: false })
         if (problem) throw problem
