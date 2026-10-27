@@ -1,0 +1,90 @@
+/* Flash deals above the menu. Six columns so an offer lines up exactly with the service cards underneath:
+   one offer spans all three, two share it (a card and a half each), three sit one above each card. */
+.offers-strip{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:24px;margin-bottom:24px}
+.offers-strip[data-count='1']>.offer-card{grid-column:span 6;min-height:300px}
+.offers-strip[data-count='2']>.offer-card{grid-column:span 3;min-height:340px}
+.offers-strip[data-count='3']>.offer-card{grid-column:span 2;min-height:360px}
+
+.offer-card{--mx:50%;--my:0%;position:relative;display:flex;min-width:0;overflow:hidden;border:1px solid #262626;border-radius:2px;background:#131313;isolation:isolate;animation:offerIn .7s cubic-bezier(.2,.7,.1,1) both;animation-delay:var(--delay,0ms);transition:transform .5s cubic-bezier(.2,.7,.1,1),border-color .5s,box-shadow .5s}
+.offer-card:hover,.offer-card:focus-within{transform:translateY(-6px);border-color:#C9A96A;box-shadow:0 30px 70px -32px #000,0 0 0 1px #C9A96A22}
+@keyframes offerIn{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:none}}
+
+/* Background: the owner's photos, or a generated gold weave when there are none. */
+.offer-canvas{position:absolute;inset:0;overflow:hidden;background:#0F0F0F}
+.offer-canvas img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transform:scale(1.04);transition:opacity 1.1s ease}
+.offer-canvas img.is-shown{opacity:1;animation:offerDrift 16s ease-in-out infinite alternate}
+@keyframes offerDrift{from{transform:scale(1.03) translate3d(0,0,0)}to{transform:scale(1.12) translate3d(-1.5%,-1.5%,0)}}
+
+.offer-weave{position:absolute;inset:-30%;background:radial-gradient(closest-side,#C9A96A4D,transparent 70%);animation:offerFloat 17s ease-in-out infinite alternate}
+.offer-weave-two{background:radial-gradient(closest-side,#8C6B2F59,transparent 70%);animation-duration:23s;animation-direction:alternate-reverse}
+@keyframes offerFloat{from{transform:translate3d(-14%,8%,0) scale(.85)}to{transform:translate3d(16%,-10%,0) scale(1.15)}}
+.offer-card:not(.has-photo) .offer-canvas::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(115deg,#FFFFFF08 0 1px,transparent 1px 9px)}
+
+.offer-ghost{position:absolute;right:-.08em;bottom:-.3em;font:400 clamp(170px,26vw,300px)/.8 'Bodoni Moda',Georgia,serif;color:#F2EFE90A;letter-spacing:-.04em;pointer-events:none}
+.offer-ghost i{font-style:normal;font-size:.44em}
+.offers-strip[data-count='3'] .offer-ghost{font-size:clamp(150px,17vw,220px)}
+
+.offer-scrim{position:absolute;inset:0;background:linear-gradient(177deg,#0B0B0B33 0%,#0B0B0BA6 44%,#0B0B0BF7 100%)}
+.offer-card:not(.has-photo) .offer-scrim{background:linear-gradient(177deg,#0B0B0B40 0%,#0B0B0B99 50%,#0B0B0BEB 100%)}
+/* The wide single banner keeps its words on the left, so the photo is darkened from that side too. */
+.offers-strip[data-count='1'] .offer-card.has-photo .offer-scrim{background:linear-gradient(177deg,#0B0B0B2E 0%,#0B0B0B8C 60%,#0B0B0BE6 100%),linear-gradient(90deg,#0B0B0BE6 0%,#0B0B0B99 42%,transparent 72%)}
+
+/* A gold pool that follows the pointer, and a single sheen that crosses the card on hover. */
+.offer-glow{position:absolute;inset:0;opacity:0;background:radial-gradient(240px circle at var(--mx) var(--my),#C9A96A52,transparent 68%);mix-blend-mode:screen;transition:opacity .45s ease}
+.offer-card:hover .offer-glow{opacity:1}
+.offer-sheen{position:absolute;top:0;bottom:0;width:48%;left:-60%;background:linear-gradient(100deg,transparent,#F2EFE91F 48%,transparent);transform:skewX(-14deg)}
+.offer-card:hover .offer-sheen{animation:offerSheen 1.15s cubic-bezier(.3,.7,.3,1) .05s}
+@keyframes offerSheen{to{left:125%}}
+
+.offer-hit{position:absolute;inset:0;z-index:4;padding:0;border:0;background:none;cursor:pointer}
+.offer-hit:focus-visible{outline:2px solid #C9A96A;outline-offset:-6px}
+
+.offer-body{position:relative;z-index:2;display:flex;flex-direction:column;align-items:flex-start;gap:10px;justify-content:flex-end;width:100%;min-width:0;padding:clamp(22px,2.6vw,34px);pointer-events:none}
+.offers-strip[data-count='1'] .offer-body{justify-content:center;max-width:620px}
+
+.offer-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.offer-tag{display:inline-flex;align-items:center;gap:8px;font:500 10px/1 'Inter Tight',sans-serif;letter-spacing:.22em;text-transform:uppercase;color:#C9A96A}
+.offer-tag::before{content:'';width:6px;height:6px;border-radius:50%;background:#C9A96A;animation:offerPulse 2.1s ease-in-out infinite}
+@keyframes offerPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.72)}}
+.offer-badge{padding:5px 9px;border:1px solid #C9A96A;border-radius:2px;background:#C9A96A1A;color:#C9A96A;font:600 11px/1 'Inter Tight',sans-serif;letter-spacing:.1em;font-variant-numeric:tabular-nums}
+.offer-timer{display:inline-flex;align-items:center;gap:7px;padding:5px 9px;border:1px solid #F2EFE926;border-radius:2px;background:#0B0B0B80;color:#E8E4DD;font:500 11px/1 'Inter Tight',sans-serif;letter-spacing:.06em;font-variant-numeric:tabular-nums}
+.offer-timer i{width:5px;height:5px;border-radius:50%;background:#D9776A;animation:offerPulse 1.1s ease-in-out infinite}
+
+.offer-title{margin:0;color:#F2EFE9;font-weight:400;letter-spacing:-.01em;line-height:1.04;font-size:clamp(30px,3.4vw,46px);text-wrap:balance}
+.offers-strip[data-count='3'] .offer-title{font-size:clamp(28px,2.4vw,34px)}
+.offer-text{margin:0;max-width:52ch;color:#CFCAC2;font-size:15px;line-height:1.6}
+.offers-strip[data-count='3'] .offer-text{font-size:14px}
+
+.offer-foot{display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap;width:100%;margin-top:6px;padding-top:16px;border-top:1px solid #FFFFFF1F}
+.offer-prices{display:flex;align-items:baseline;gap:10px;font-variant-numeric:tabular-nums}
+.offer-prices s{color:#8E8B85;font-size:15px;text-decoration-thickness:1px}
+.offer-prices strong{color:#C9A96A;font:400 clamp(26px,2.4vw,32px)/1 'Bodoni Moda',Georgia,serif}
+.offer-cta{display:inline-flex;align-items:center;gap:9px;color:#F2EFE9;font:500 11px/1 'Inter Tight',sans-serif;letter-spacing:.18em;text-transform:uppercase}
+.offer-cta i{font-style:normal;transition:transform .4s cubic-bezier(.2,.7,.1,1);color:#C9A96A}
+.offer-card:hover .offer-cta i{transform:translateX(7px)}
+
+.offer-bars{position:absolute;left:0;right:0;bottom:0;z-index:5;display:flex;gap:3px;padding:0 3px 3px}
+.offer-bar{position:relative;flex:1;height:14px;padding:0;border:0;background:none;cursor:pointer}
+.offer-bar::before{content:'';position:absolute;left:0;right:0;bottom:0;height:2px;background:#FFFFFF2E}
+.offer-bar i{position:absolute;left:0;bottom:0;width:0;height:2px;background:#C9A96A}
+.offer-bar.is-active i{animation:offerFill linear forwards}
+@keyframes offerFill{from{width:0}to{width:100%}}
+.offer-bar:focus-visible{outline:1px solid #C9A96A;outline-offset:2px}
+
+@media(min-width:761px) and (max-width:1100px){
+  .offers-strip{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .offers-strip>.offer-card,.offers-strip[data-count='2']>.offer-card,.offers-strip[data-count='3']>.offer-card{grid-column:span 1;min-height:320px}
+  .offers-strip[data-count='1']>.offer-card,.offers-strip[data-count='3']>.offer-card:first-child{grid-column:span 2}
+}
+@media(max-width:760px){
+  .offers-strip{grid-template-columns:minmax(0,1fr);gap:16px;margin-bottom:16px}
+  .offers-strip>.offer-card,.offers-strip[data-count='1']>.offer-card,.offers-strip[data-count='2']>.offer-card,.offers-strip[data-count='3']>.offer-card{grid-column:span 1;min-height:268px}
+  .offer-title,.offers-strip[data-count='3'] .offer-title{font-size:30px}
+  .offer-ghost,.offers-strip[data-count='3'] .offer-ghost{font-size:150px}
+}
+@media(prefers-reduced-motion:reduce){
+  .offer-card,.offer-canvas img.is-shown,.offer-weave,.offer-tag::before,.offer-timer i,.offer-bar.is-active i{animation:none}
+  .offer-card,.offer-cta i,.offer-canvas img{transition:none}
+  .offer-card:hover .offer-sheen{animation:none}
+  .offer-bar.is-active i{width:100%}
+}

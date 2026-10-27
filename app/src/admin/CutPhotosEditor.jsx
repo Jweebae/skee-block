@@ -21,12 +21,12 @@ async function shrink(file) {
   return blob
 }
 
-export default function CutPhotosEditor({ cut, onChange }) {
+export default function CutPhotosEditor({ cut, onChange, folder = cut.id, max = MAX_CUT_PHOTOS, title = 'Photos', hint = 'Shown when a client hovers over this cut on the homepage and in booking (a Photos button on phones). The first photo shows first.' }) {
   const photos = cut.photos || []
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   async function add(event) {
-    const files = [...event.target.files].slice(0, MAX_CUT_PHOTOS - photos.length)
+    const files = [...event.target.files].slice(0, max - photos.length)
     event.target.value = ''
     if (!files.length) return
     setBusy(true); setError('')
@@ -35,7 +35,7 @@ export default function CutPhotosEditor({ cut, onChange }) {
       for (const file of files) {
         if (!file.type.startsWith('image/')) continue
         const blob = await shrink(file)
-        const path = `${cut.id}/${crypto.randomUUID()}.${blob.type === 'image/webp' ? 'webp' : 'jpg'}`
+        const path = `${folder}/${crypto.randomUUID()}.${blob.type === 'image/webp' ? 'webp' : 'jpg'}`
         const { error: problem } = await supabase.storage.from('cut-photos').upload(path, blob, { contentType: blob.type, cacheControl: '31536000', upsert: false })
         if (problem) throw problem
         added.push(supabase.storage.from('cut-photos').getPublicUrl(path).data.publicUrl)
@@ -50,9 +50,9 @@ export default function CutPhotosEditor({ cut, onChange }) {
   const remove = url => onChange(photos.filter(item => item !== url))
   const cover = url => onChange([url, ...photos.filter(item => item !== url)])
   return <div className="admin-full-field cut-photos-editor">
-    <span>Photos · {photos.length}/{MAX_CUT_PHOTOS} <small>Shown when a client hovers over this cut on the homepage and in booking (a Photos button on phones). The first photo shows first.</small></span>
+    <span>{title} · {photos.length}/{max} <small>{hint}</small></span>
     {photos.length > 0 && <ul>{photos.map((url, index) => <li key={url}><img src={url} alt={`${cut.name}, photo ${index + 1}`} loading="lazy" />{index === 0 ? <b>First</b> : <button type="button" className="admin-outline" onClick={() => cover(url)}>Show first</button>}<button type="button" className="admin-outline admin-delete" onClick={() => remove(url)}>Remove</button></li>)}</ul>}
-    {photos.length < MAX_CUT_PHOTOS && <label className="admin-outline cut-photos-add">{busy ? 'Uploading…' : '+ Add photos'}<input type="file" accept="image/*" multiple disabled={busy} onChange={add} /></label>}
+    {photos.length < max && <label className="admin-outline cut-photos-add">{busy ? 'Uploading…' : '+ Add photos'}<input type="file" accept="image/*" multiple disabled={busy} onChange={add} /></label>}
     {error && <p className="admin-error" role="alert">{error}</p>}
     {photos.length > 0 && <small>Click “Save all changes” to publish photo changes.</small>}
   </div>

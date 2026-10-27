@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import logo from '../assets/skee-logo-white.svg'
 import { BASE_CUT_PRICE, formatPrice } from '../booking/catalog'
+import { MAX_OFFERS } from '../offers/offers'
 import AddonEditor from './AddonEditor'
 import OwnerManager from './OwnerManager'
 import AppointmentsManager from './AppointmentsManager'
@@ -8,11 +9,12 @@ import StudioDetails from './StudioDetails'
 import NotificationSettings from './NotificationSettings'
 import WhatsAppSettings from './WhatsAppSettings'
 import CutPhotosEditor from './CutPhotosEditor'
+import OffersEditor from './OffersEditor'
 import HeaderAvatar from '../auth/HeaderAvatar'
 import useClientProfile from '../auth/useClientProfile'
 import './AdminPanel.css'
 
-const SECTIONS = [ ['cuts', 'Cuts & preferences'], ['addons', 'Add-ons'], ['hours', 'Working hours'] ]
+const SECTIONS = [ ['cuts', 'Cuts & preferences'], ['addons', 'Add-ons'], ['offers', 'Offers'], ['hours', 'Working hours'] ]
 const OWNER_SECTIONS = [['appointments', 'Appointments'], ...SECTIONS, ['studio', 'Studio details'], ['notifications', 'Notifications'], ['whatsapp', 'WhatsApp'], ['owners', 'Owners']] // these need the online database
 
 export default function AdminPanel({ settings, storageError, onSave, owner = null }) {
@@ -55,10 +57,13 @@ export default function AdminPanel({ settings, storageError, onSave, owner = nul
   }
 
   function addItem(collection) {
-    const id = `${collection === 'services' ? 'cut' : 'extra'}-${crypto.randomUUID()}`
+    const prefix = { services: 'cut', offers: 'offer' }[collection] || 'extra'
+    const id = `${prefix}-${crypto.randomUUID()}`
     const item = collection === 'services'
       ? { id, name: 'New cut', description: '', category: 'Cut', duration: 30, preferences: [], photos: [], visible: true }
-      : { id, name: 'New add-on', description: '', types: [{ id: `type-${crypto.randomUUID()}`, name: 'Standard', description: '', duration: 5, price: 0, visible: true }], visible: true }
+      : collection === 'offers'
+        ? { id, label: 'Flash deal', name: 'New offer', description: '', serviceId: '', photos: [], oldPrice: 0, newPrice: 0, endsAt: '', visible: true }
+        : { id, name: 'New add-on', description: '', types: [{ id: `type-${crypto.randomUUID()}`, name: 'Standard', description: '', duration: 5, price: 0, visible: true }], visible: true }
     setDraft(current => ({ ...current, [collection]: [...current[collection], item] }))
     setMessage('')
     setError('')
@@ -133,11 +138,13 @@ export default function AdminPanel({ settings, storageError, onSave, owner = nul
         {owner ? <div className="admin-preview-note"><span className="lbl">Owner session</span><p>You are signed in as the owner. Saved changes are stored online and apply to the website on every device. Sample details stay until you change them.</p></div> : <div className="admin-preview-note"><span className="lbl">Local admin preview</span><p>Changes are saved in this browser only. Owner sign-in and shared online storage are not connected yet. Keep the sample details for now.</p></div>}
         {storageError && <p className="admin-error" role="alert">{storageError}</p>}
         {section === 'owners' ? <OwnerManager headingRef={headingRef} /> : section === 'appointments' ? <AppointmentsManager settings={draft} headingRef={headingRef} /> : section === 'studio' ? <StudioDetails headingRef={headingRef} /> : section === 'notifications' ? <NotificationSettings headingRef={headingRef} /> : section === 'whatsapp' ? <WhatsAppSettings headingRef={headingRef} /> : <form onSubmit={save}>
-          <div className="admin-title-row"><div><span className="lbl">Skee Block · Studio controls</span><h1 className="serif" ref={headingRef} tabIndex={-1}>{sections.find(([id]) => id === section)[1]}</h1><p>{section === 'cuts' ? 'Edit the menu, styling preferences and time needed for each cut.' : section === 'addons' ? 'Manage add-ons and the types clients choose, with a price and description for each type.' : 'Set Skee’s weekly hours and breaks. The preview calendar follows this schedule.'}</p></div>{section !== 'hours' && <button type="button" className="admin-outline" disabled={draft[section === 'cuts' ? 'services' : 'addons'].length >= 100} onClick={() => addItem(section === 'cuts' ? 'services' : 'addons')}>+ New {section === 'cuts' ? 'cut' : 'add-on'}</button>}</div>
+          <div className="admin-title-row"><div><span className="lbl">Skee Block · Studio controls</span><h1 className="serif" ref={headingRef} tabIndex={-1}>{sections.find(([id]) => id === section)[1]}</h1><p>{section === 'cuts' ? 'Edit the menu, styling preferences and time needed for each cut.' : section === 'addons' ? 'Manage add-ons and the types clients choose, with a price and description for each type.' : section === 'offers' ? 'Up to three deals, shown above the menu on the homepage. With none, the homepage is unchanged.' : 'Set Skee’s weekly hours and breaks. The preview calendar follows this schedule.'}</p></div>{section !== 'hours' && <button type="button" className="admin-outline" disabled={section === 'offers' ? draft.offers.length >= MAX_OFFERS : draft[section === 'cuts' ? 'services' : 'addons'].length >= 100} onClick={() => addItem(section === 'cuts' ? 'services' : section === 'offers' ? 'offers' : 'addons')}>+ New {section === 'cuts' ? 'cut' : section === 'offers' ? 'offer' : 'add-on'}</button>}</div>
 
           {section === 'cuts' && <><div className="admin-price-rule"><span className="lbl">Fixed base price</span><strong>{formatPrice(BASE_CUT_PRICE)}</strong><span>Applies to every cut. Only optional add-ons change the total.</span></div><div className="admin-editor-list">{draft.services.map((item, index) => <section className="admin-editor-card" key={item.id} aria-label={`Cut ${index + 1}`}><div className="admin-card-heading"><span className="lbl">Cut {String(index + 1).padStart(2, '0')}</span><label className="admin-toggle"><input type="checkbox" checked={item.visible} onChange={e => update('services', item.id, 'visible', e.target.checked)} />Visible on website</label></div>
             <div className="admin-field-grid"><label>Cut name<input id={`${item.id}-name`} aria-label={`Cut ${index + 1} name`} value={item.name} maxLength={80} required onChange={e => update('services', item.id, 'name', e.target.value)} /></label><label>Duration · minutes<input aria-label={`Cut ${index + 1} duration`} type="number" min="5" max="240" step="1" required value={item.duration} onChange={e => update('services', item.id, 'duration', e.target.value)} /></label><label>Category<input aria-label={`Cut ${index + 1} category`} value={item.category} maxLength={60} required onChange={e => update('services', item.id, 'category', e.target.value)} /></label></div>
             <label className="admin-full-field">Description<textarea aria-label={`Cut ${index + 1} description`} rows={2} maxLength={500} value={item.description} onChange={e => update('services', item.id, 'description', e.target.value)} /></label><label className="admin-full-field">Preferences · one option per line<textarea aria-label={`Cut ${index + 1} preferences`} rows={3} value={item.preferences.join('\n')} onChange={e => update('services', item.id, 'preferences', e.target.value.split('\n'))} /><small>Clients can choose these at review. Preferences do not add a fee.</small></label>{owner && <CutPhotosEditor cut={item} onChange={photos => update('services', item.id, 'photos', photos)} />}<div className="admin-card-actions"><button type="button" className="admin-outline" disabled={draft.services.length >= 100} onClick={() => duplicateItem('services', item)}>Duplicate cut</button><button type="button" className="admin-outline admin-delete" onClick={() => setDeleteTarget({ collection: 'services', id: item.id, name: item.name, kind: 'cut' })}>Delete cut</button></div></section>)}</div>{!draft.services.length && <p className="admin-empty">No cuts yet. Add your first cut above.</p>}</>}
+
+          {section === 'offers' && <OffersEditor offers={draft.offers} services={draft.services} onUpdate={(id, field, value) => update('offers', id, field, value)} onDelete={setDeleteTarget} allowPhotos={Boolean(owner)} />}
 
           {section === 'addons' && <AddonEditor items={draft.addons} onUpdate={update} onDuplicate={duplicateItem} onDelete={setDeleteTarget} onAddType={addType} onUpdateType={updateType} onDeleteType={(parentId, type) => setDeleteTarget({ collection: 'addons', parentId, id: type.id, name: type.name, kind: 'type' })} />}
 

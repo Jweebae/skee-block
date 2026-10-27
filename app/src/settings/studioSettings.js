@@ -1,4 +1,5 @@
 import { BASE_CUT_PRICE, SERVICES, PREVIEW_ADDONS, TREATMENT_ADDONS } from '../booking/catalog'
+import { MAX_OFFERS, MAX_OFFER_PHOTOS } from '../offers/offers'
 
 export const SETTINGS_KEY = 'skee.studio-settings.v1'
 export const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
@@ -17,6 +18,7 @@ export function createDefaultSettings() {
     services: SERVICES.map((item, index) => ({ ...item, visible: true, preferences: PREFERENCES[item.id], category: ['Signature', 'Fade', 'Beard', 'Ritual', 'Pair', 'The full hour and a half'][index] })),
     addons: structuredClone(PREVIEW_ADDONS),
     hours: WEEKDAYS.map((day, weekday) => ({ weekday, day, open: weekday !== 5, start: '10:00', end: '20:00', breakStart: '13:00', breakEnd: '14:00' })),
+    offers: [],
   }
 }
 
@@ -37,6 +39,14 @@ function photoList(value, label) {
   if (value === undefined) return []
   if (!Array.isArray(value) || value.length > MAX_CUT_PHOTOS) throw new Error(`${label}: use up to ${MAX_CUT_PHOTOS} photos.`)
   return [...new Set(value.filter(url => typeof url === 'string' && PHOTO_URL.test(url)))]
+}
+
+// Offers shown above the menu. An empty end time means the offer runs until the owner hides it.
+function offerEndsAt(value, label) {
+  const text = String(value || '').trim()
+  if (!text) return ''
+  if (!/^\d{4}-\d{2}-\d{2}T([01]\d|2[0-3]):[0-5]\d$/.test(text)) throw new Error(`${label}: choose a valid end date and time, or leave it empty.`)
+  return text
 }
 
 export function timeInMinutes(value) {
@@ -79,8 +89,24 @@ export function validateSettings(input) {
     if (open && breakStart && (!Number.isFinite(timeInMinutes(breakStart)) || !Number.isFinite(timeInMinutes(breakEnd)) || timeInMinutes(breakStart) < timeInMinutes(start) || timeInMinutes(breakStart) >= timeInMinutes(breakEnd) || timeInMinutes(breakEnd) > timeInMinutes(end))) throw new Error(`${day}: the break must sit inside working hours, with its end after its start.`)
     return { weekday, day, open, start, end, breakStart, breakEnd }
   })
+  const serviceIds = new Set(services.map(item => item.id))
+  const offers = (Array.isArray(input.offers) ? input.offers : []).slice(0, MAX_OFFERS).map(item => {
+    const base = identity(item, 'Offer')
+    const price = (value, label) => (value === '' || value === null || value === undefined ? 0 : integer(value, label, 0, 100000))
+    const oldPrice = price(item.oldPrice, `${base.name} old price`)
+    const newPrice = price(item.newPrice, `${base.name} offer price`)
+    if (oldPrice > 0 && newPrice > 0 && newPrice >= oldPrice) throw new Error(`${base.name}: the offer price must be lower than the old price.`)
+    return {
+      ...base,
+      label: text(item.label || 'Offer', 'Offer tag', 24),
+      serviceId: serviceIds.has(item.serviceId) ? item.serviceId : '',
+      photos: photoList(item.photos, base.name).slice(0, MAX_OFFER_PHOTOS),
+      oldPrice, newPrice,
+      endsAt: offerEndsAt(item.endsAt, base.name),
+    }
+  })
   // No editable base-price field: this business rule is always 800 DA.
-  return { version: 2, services, addons, hours, basePrice: BASE_CUT_PRICE }
+  return { version: 2, services, addons, hours, offers, basePrice: BASE_CUT_PRICE }
 }
 
 export function migrateSettings(input) {
