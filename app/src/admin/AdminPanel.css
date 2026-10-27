@@ -161,3 +161,5 @@
 .offer-menu-types{display:grid;gap:8px;margin:10px 0 0 26px;padding-left:14px;border-left:1px solid #262626}
 .offer-menu-types .admin-toggle{color:#A8A49D;font-size:13px}
 .offer-items-editor strong{color:#C9A96A;font-weight:500}
+.offer-cut-included{padding:12px 14px;border:1px solid #C9A96A55;border-radius:2px;background:#C9A96A0D;color:#F2EFE9;font-size:14px}
+.offer-cut-included-note{margin-top:-4px!important}

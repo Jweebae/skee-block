@@ -1,3 +1,5 @@
+import { BASE_CUT_PRICE } from '../booking/catalog'
+
 // Flash deals shown above the service menu. Saved with the studio settings, so they reach every device the same way
 // the menu does. Algeria keeps UTC+1 all year, so an end time typed by the owner is read in M'Sila time.
 export const MAX_OFFERS = 3
@@ -15,8 +17,10 @@ export const MAX_OFFER_ADDONS = 20
 
 // What the offer is made of: add-ons picked from the studio menu (which are really applied to the booking),
 // then any extra lines the owner typed by hand. Menu prices are read fresh, so an edited menu is never out of date.
-export function offerLines(offer, menu = []) {
+export function offerLines(offer, menu = [], cutName = '') {
   const lines = []
+  // The cut itself is listed only when the deal's price covers it.
+  if (offer?.includesCut) lines.push({ id: 'base-cut', name: cutName || 'Haircut', price: BASE_CUT_PRICE })
   for (const choice of offer?.addons || []) {
     const group = menu.find(item => item.id === choice.addonId && item.visible !== false)
     const type = group?.types?.find(item => item.id === choice.typeId && item.visible !== false)

@@ -114,6 +114,7 @@ export function validateSettings(input) {
     })
     return {
       ...base,
+      includesCut: item.includesCut === true,
       addons: chosenAddons,
       items,
       label: text(item.label || 'Offer', 'Offer tag', 24),

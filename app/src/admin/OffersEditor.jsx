@@ -39,7 +39,8 @@ export default function OffersEditor({ offers, services, menu = [], onUpdate, on
       const percent = offerPercent(offer)
       const set = field => event => onUpdate(offer.id, field, event.target.value)
       const items = offer.items || []
-      const sum = BASE_CUT_PRICE + linesTotal(offerLines(offer, menu))
+      const dealCut = services.find(item => item.id === offer.serviceId)
+      const sum = linesTotal(offerLines(offer, menu, dealCut?.name))
       const setItem = (itemId, field, value) => onUpdate(offer.id, 'items', items.map(entry => (entry.id === itemId ? { ...entry, [field]: value } : entry)))
       return <section className="admin-editor-card" key={offer.id} aria-label={`Offer ${index + 1}`}>
         <div className="admin-card-heading"><span className="lbl">Offer {String(index + 1).padStart(2, '0')}</span><label className="admin-toggle"><input type="checkbox" checked={offer.visible} onChange={event => onUpdate(offer.id, 'visible', event.target.checked)} />Showing on the homepage</label></div>
@@ -51,7 +52,11 @@ export default function OffersEditor({ offers, services, menu = [], onUpdate, on
         <label className="admin-full-field">Description<textarea rows={2} maxLength={500} value={offer.description} onChange={set('description')} /></label>
 
         <div className="admin-full-field offer-items-editor">
-          <span>What the client gets <small>Tick the add-ons this deal includes, then the exact one you mean. They are added to the booking for the client. Every base cut is {BASE_CUT_PRICE} DA and is always included.</small></span>
+          <span>What the client gets <small>Tick what this deal includes. Add-ons are applied to the booking for the client; you only have to pick the exact one you mean.</small></span>
+          <label className="admin-toggle offer-cut-included"><input type="checkbox" checked={offer.includesCut === true} onChange={event => onUpdate(offer.id, 'includesCut', event.target.checked)} />This offer includes a haircut</label>
+          <small className="offer-cut-included-note">{offer.includesCut
+            ? `Listed first as “${dealCut?.name || 'Haircut'} · ${BASE_CUT_PRICE} DA”, because the deal price covers the cut.`
+            : `Not listed, and the card tells the client their cut is charged separately on top of this deal.`}</small>
           <MenuPicker offer={offer} menu={menu} onUpdate={onUpdate} />
 
           <span>Extra lines · {items.length}/{MAX_OFFER_ITEMS} <small>For anything not on the add-ons menu. These are listed on the card but are not added to the booking.</small></span>
@@ -61,7 +66,7 @@ export default function OffersEditor({ offers, services, menu = [], onUpdate, on
             <button type="button" className="admin-outline admin-delete" onClick={() => onUpdate(offer.id, 'items', items.filter(other => other.id !== entry.id))}>Remove</button>
           </li>)}</ul>}
           {items.length < MAX_OFFER_ITEMS && <button type="button" className="admin-outline" onClick={() => onUpdate(offer.id, 'items', [...items, { id: `item-${crypto.randomUUID()}`, name: '', price: 0 }])}>+ Add a line</button>}
-          <small>A cut plus everything above comes to <strong>{sum} DA</strong>{Number(offer.oldPrice) > 0 && sum !== Number(offer.oldPrice) ? `, but the usual price below says ${offer.oldPrice} DA. Clients see both, so keep them in step.` : '. Use that as the usual price below.'}</small>
+          <small>Everything ticked above comes to <strong>{sum} DA</strong>{Number(offer.oldPrice) > 0 && sum !== Number(offer.oldPrice) ? `, but the usual price below says ${offer.oldPrice} DA. Clients see both, so keep them in step.` : '. Use that as the usual price below.'}</small>
         </div>
 
         <div className="admin-field-grid">

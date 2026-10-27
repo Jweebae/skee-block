@@ -41,10 +41,10 @@ function OfferCard({ offer, index, services, menu, onBook }) {
   const [open, setOpen] = useState(false)
   const [album, setAlbum] = useState(false)
   const photos = offer.photos || []
-  const lines = offerLines(offer, menu)
   // The cut is the one thing the offer leaves open, so Book now waits until it is picked.
   const [cutId, setCutId] = useState(offer.serviceId || '')
   const cut = services.find(item => item.id === cutId)
+  const lines = offerLines(offer, menu, cut?.name)
   const [shown, setShown] = usePhotoCycle(photos.length, hovered || open)
   const left = useCountdown(offerEnd(offer))
   const percent = offerPercent(offer)
@@ -140,6 +140,7 @@ function OfferCard({ offer, index, services, menu, onBook }) {
             {(was > 0 || now > 0) && <div className="offer-total">
               {was > 0 && <span>Usual total <s>{was} DA</s></span>}
               <span className="offer-total-now">Offer price <strong>{now > 0 ? now : was} DA</strong></span>
+              {!offer.includesCut && <span className="offer-total-note">Your cut is charged separately</span>}
             </div>}
 
             <div className="offer-actions">
