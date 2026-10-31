@@ -21,6 +21,8 @@ const MESSAGES = {
   locked: 'The location unlocks once Skee confirms your appointment.',
   bad_name: 'Enter the client’s name.',
   bad_email: 'Check the email address.',
+  offer_ended: 'This offer has just ended, so the normal price now applies. Check the total, then send your request again.',
+  offer_changed: 'Your choices no longer match this offer, so the normal price now applies. Check the total, then send your request again.',
   bad_action: 'This change is not possible. Refresh the page and try again.',
   unknown_action: 'This change is not possible. Refresh the page and try again.',
 }

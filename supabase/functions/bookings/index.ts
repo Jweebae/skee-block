@@ -38,7 +38,7 @@ const reply = (req: Request, status: number, body: unknown) =>
 
 // ---------- time and settings ----------
 type Hours = { weekday: number; open: boolean; start: string; end: string; breakStart: string; breakEnd: string }
-type Settings = { services: any[]; addons: any[]; hours: Hours[] }
+type Settings = { services: any[]; addons: any[]; hours: Hours[]; offers?: any[] }
 
 const minutes = (value: string) => /^([01]\d|2[0-3]):[0-5]\d$/.test(value ?? '') ? Number(value.slice(0, 2)) * 60 + Number(value.slice(3)) : NaN
 const instant = (date: string, time: string) => new Date(`${date}T${time}:00${OFFSET}`)
@@ -85,6 +85,28 @@ function priceVisit(settings: Settings, serviceId: string, choices: unknown, { o
   const duration = Number(service.duration) + addons.reduce((sum, item) => sum + item.duration, 0)
   const total = BASE_PRICE + addons.reduce((sum, item) => sum + item.price, 0)
   return { service, addons, duration, total }
+}
+
+// What a visit costs under an offer. The browser only names the offer: the amount is worked out here from the saved
+// settings, by the same rule as offerQuote in app/src/offers/offers.js. An offer that has ended or no longer matches the
+// visit is refused, so a client is never charged a different price from the one on their screen.
+function quoteOffer(settings: Settings, offerId: unknown, visit: { service: any; addons: { id: string; typeId: string; price: number }[]; total: number }) {
+  const offer = (settings.offers ?? []).find(item => item.id === offerId)
+  const price = Number(offer?.newPrice) || 0
+  const ends = offer?.endsAt ? new Date(`${offer.endsAt}:00${OFFSET}`).getTime() : 0
+  if (!offer || offer.visible === false || price <= 0 || (ends && ends <= Date.now())) fail(409, 'offer_ended')
+  if (offer.serviceId && offer.serviceId !== visit.service.id) fail(409, 'offer_changed')
+  // An add-on the owner has since taken off the menu is no longer part of the deal.
+  const included = (offer.addons ?? []).flatMap((choice: any) => {
+    const group = settings.addons.find(item => item.id === choice.addonId && item.visible !== false)
+    const type = group?.types?.find((item: any) => item.id === choice.typeId && item.visible !== false)
+    return type ? [{ id: group.id, typeId: type.id }] : []
+  })
+  if (!included.every((item: any) => visit.addons.some(chosen => chosen.id === item.id && chosen.typeId === item.typeId))) fail(409, 'offer_changed')
+  const extras = visit.addons.filter(chosen => !included.some((item: any) => item.id === chosen.id)).reduce((sum, item) => sum + item.price, 0)
+  const total = price + (offer.includesCut ? 0 : BASE_PRICE) + extras
+  if (total >= visit.total) fail(409, 'offer_changed')
+  return { name: String(offer.name), total }
 }
 
 function checkClientTime(settings: Settings, date: string, time: string, duration: number) {
@@ -156,7 +178,7 @@ function emailValues(booking: any, location?: string) {
     date: dayLabel(at),
     time: algiersParts(at).time,
     duration: `${booking.duration_minutes} min`,
-    total: money(booking.total_price),
+    total: booking.offer_name ? `${money(booking.total_price)} (${booking.offer_name} offer, usual ${money(booking.usual_price)})` : money(booking.total_price),
     notes: booking.notes || 'None',
     phone: booking.client_phone || 'Not given',
     location_url: location || `https://wa.me/${STUDIO_WHATSAPP}?text=${encodeURIComponent(`Salam Skee, I need the location for booking ${booking.code}.`)}`,
@@ -300,6 +322,7 @@ async function createRequest(db: SupabaseClient, user: User, body: any) {
   if (user.user_metadata?.profile_complete !== true) fail(409, 'profile_incomplete')
   const settings = await loadSettings(db)
   const visit = priceVisit(settings, body.serviceId, body.addons ?? [])
+  const deal = body.offerId ? quoteOffer(settings, body.offerId, visit) : null
   checkClientTime(settings, body.date, body.time, visit.duration)
   const phone = cleanPhone(body.phone)
   const channel = body.channel === 'whatsapp' ? 'whatsapp' : 'email'
@@ -311,7 +334,8 @@ async function createRequest(db: SupabaseClient, user: User, body: any) {
   const booking = await insertBooking(db, {
     client_id: user.id, client_name: fullName(user), client_email: user.email, client_phone: phone,
     service_id: visit.service.id, service_name: visit.service.name, addons: visit.addons, preferences,
-    notes: cleanText(body.notes, 1000), reminder_channel: channel, total_price: visit.total, duration_minutes: visit.duration,
+    notes: cleanText(body.notes, 1000), reminder_channel: channel, total_price: deal?.total ?? visit.total, duration_minutes: visit.duration,
+    offer_name: deal?.name ?? null, usual_price: deal ? visit.total : null,
     starts_at: startsAt.toISOString(), ends_at: new Date(startsAt.getTime() + visit.duration * 60000).toISOString(),
   })
   await db.from('client_profiles').upsert({ user_id: user.id, phone, reminder_channel: channel, updated_at: new Date().toISOString() })

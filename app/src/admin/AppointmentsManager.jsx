@@ -60,6 +60,7 @@ function BookingCard({ booking, locationUrl, onAction, busy, now, photo }) {
       {booking.client_email && <div><dt>Email</dt><dd>{booking.client_email}</dd></div>}
       {booking.preferences?.length > 0 && <div><dt>Preferences</dt><dd>{booking.preferences.join(' · ')}</dd></div>}
       {booking.notes && <div><dt>Notes</dt><dd>{booking.notes}</dd></div>}
+      {booking.offer_name && <div><dt>Offer</dt><dd>{booking.offer_name} · usual {formatPrice(booking.usual_price)}</dd></div>}
       <div><dt>Reminder by</dt><dd>{booking.reminder_channel === 'whatsapp' ? 'WhatsApp' : 'Email'}</dd></div>
     </dl>
     {moving ? <div className="appt-move">

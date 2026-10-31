@@ -89,7 +89,7 @@ function Upcoming({ booking, settings, now, onChanged }) {
       <h2 className="serif">{booking.service_name}</h2>
       <p>{dayLabel(booking.starts_at)} · {time} · {booking.duration_minutes} min · with Skee</p>
       {extrasText(booking) && <p className="acct-muted">+ {extrasText(booking)}</p>}
-      <p className="acct-muted">{formatPrice(booking.total_price)} · paid at the studio</p>
+      <p className="acct-muted">{formatPrice(booking.total_price)}{booking.offer_name ? ` · ${booking.offer_name} offer, usual ${formatPrice(booking.usual_price)}` : ''} · paid at the studio</p>
       {mode === 'reschedule' ? <Reschedule booking={booking} settings={settings} onDone={onChanged} onCancel={() => setMode('')} /> : <div className="acct-actions">
         {!lateForChanges && <button type="button" className="acct-btn" onClick={() => setMode('reschedule')}>Reschedule</button>}
         {canCancel && (mode === 'cancel'

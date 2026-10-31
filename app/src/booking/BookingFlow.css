@@ -142,3 +142,9 @@
 .booking-service-photos{position:absolute;right:16px;bottom:16px}
 .booking-avatar{margin-left:auto}
 .booking-avatar+.booking-close{margin-left:0}
+.booking-price-lines .booking-offer-line dt,.booking-price-lines .booking-offer-line dd{color:#C9A96A}
+.booking-total-prices{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:flex-end;gap:4px 12px;min-width:0}
+.booking-total-prices s{color:#8E8B85;font-size:16px;white-space:nowrap;text-decoration-thickness:1px}
+.booking-total-prices s+strong{color:#C9A96A}
+.booking-mobile-total s{display:block;margin-bottom:3px;color:#8E8B85;font-size:11px;text-decoration-thickness:1px}
+.booking-offer-lost{color:#D9B28A}

@@ -79,6 +79,6 @@ export default function OffersEditor({ offers, services, menu = [], onUpdate, on
       </section>
     })}</div>
     {!offers.length && <p className="admin-empty">No offers yet. Add one to show a deal above the menu; the homepage stays exactly as it is until you do.</p>}
-    <p className="admin-empty offers-price-note">The offer price is shown on the card. The booking total is still the cut plus the add-ons you ticked, so tell the client the offer price when they come in, or ask for the discount to be applied to the booking total as well.</p>
+    <p className="admin-empty offers-price-note">A client who books through an offer pays the offer price, with the normal total crossed out beside it. If they remove one of the deal’s add-ons, the normal price applies. Add-ons they add on top are charged normally. Extra lines are only listed on the card.</p>
   </>
 }

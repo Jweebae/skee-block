@@ -36,6 +36,25 @@ export const linesTotal = lines => lines.reduce((sum, line) => sum + (Number(lin
 // Booking takes the add-ons as a map of group to chosen type.
 export const offerAddonMap = offer => Object.fromEntries((offer?.addons || []).map(choice => [choice.addonId, choice.typeId]))
 
+// What a visit costs under an offer, or null when the client's choices no longer match the deal. Add-ons on top of the
+// deal are charged normally, and so is the cut when the deal does not cover it. The bookings Edge Function applies this
+// same rule (quoteOffer) and saves the result, so keep the two in step.
+export function offerQuote(offer, { serviceId, addons = [], menu = [], normalTotal = 0, now = 0 }) {
+  const price = Number(offer?.newPrice) || 0
+  if (!offer || offer.visible === false || price <= 0 || (offer.endsAt && offerEnd(offer) <= now)) return null
+  if (offer.serviceId && offer.serviceId !== serviceId) return null
+  // An add-on the owner has since taken off the menu is no longer part of the deal.
+  const included = (offer.addons || []).flatMap(choice => {
+    const group = menu.find(item => item.id === choice.addonId && item.visible !== false)
+    const type = group?.types?.find(item => item.id === choice.typeId && item.visible !== false)
+    return type ? [{ id: group.id, typeId: type.id }] : []
+  })
+  if (!included.every(item => addons.some(chosen => chosen.id === item.id && chosen.typeId === item.typeId))) return null
+  const extras = addons.filter(chosen => !included.some(item => item.id === chosen.id)).reduce((sum, item) => sum + item.price, 0)
+  const total = price + (offer.includesCut ? 0 : BASE_CUT_PRICE) + extras
+  return total < normalTotal ? { name: offer.name, total } : null
+}
+
 export function offerPercent(offer) {
   const was = Number(offer?.oldPrice) || 0
   const now = Number(offer?.newPrice) || 0

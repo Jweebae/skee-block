@@ -76,7 +76,7 @@ function OfferCard({ offer, index, services, menu, onBook }) {
   // Everything else in the offer is already decided, so booking opens straight at Date & time.
   function book() {
     if (!cutId) return
-    onBook({ serviceId: cutId, addons: offerAddonMap(offer), step: 2 })
+    onBook({ serviceId: cutId, addons: offerAddonMap(offer), step: 2, offerId: offer.id })
   }
 
   function chooseCut(id) {
