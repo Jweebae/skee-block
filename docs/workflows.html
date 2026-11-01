@@ -135,15 +135,17 @@ a:focus-visible { outline: 1px solid var(--gilt); outline-offset: 3px }
       <a href="#review-request">Owner answers a request <i class="dot planned"></i></a>
       <a href="#reminder">Appointment-day reminder <i class="dot planned"></i></a>
       <a href="#cancel">Cancel or move <i class="dot planned"></i></a>
-      <a href="#after">After the visit and reviews <i class="dot planned"></i></a>
+      <a href="#after">After the visit and reviews <i class="dot live"></i></a>
       <a href="#history">Booking history <i class="dot planned"></i></a>
     </div>
     <div><span class="lbl">Owner</span>
       <a href="#owner-signin">Owner sign-in and reset <i class="dot live"></i></a>
       <a href="#overview">Today’s chair <i class="dot planned"></i></a>
       <a href="#walkin">Walk-in booking <i class="dot planned"></i></a>
-      <a href="#clients">Clients <i class="dot planned"></i></a>
-      <a href="#moderation">Review moderation <i class="dot planned"></i></a>
+      <a href="#clients">Clients <i class="dot live"></i></a>
+      <a href="#money">Money and debts <i class="dot live"></i></a>
+      <a href="#gifts">Gifts to one client <i class="dot live"></i></a>
+      <a href="#moderation">Review moderation <i class="dot live"></i></a>
       <a href="#whatsapp">WhatsApp messages <i class="dot planned"></i></a>
       <a href="#studio-details">Private location <i class="dot planned"></i></a>
       <a href="#settings">Studio settings <i class="dot live"></i></a>
@@ -310,14 +312,14 @@ a:focus-visible { outline: 1px solid var(--gilt); outline-offset: 3px }
       </article>
 
       <article class="flow" id="after">
-        <div class="flow-head"><div><h3>After the visit and reviews</h3><div class="meta"><span><b>Who:</b> owner, then the client</span><span><b>When:</b> the day after the appointment</span></div></div><span class="chip planned">Planned</span></div>
+        <div class="flow-head"><div><h3>After the visit and reviews</h3><div class="meta"><span><b>Who:</b> owner, then the client</span><span><b>When:</b> as soon as the owner confirms the cut is done</span></div></div><span class="chip live">Live</span></div>
         <ol class="steps">
-          <li><strong>Owner closes the appointment</strong><ul class="sub"><li>Mark <b>Completed</b> or <b>Missed</b> (did not come).</li></ul></li>
-          <li><strong>Review request</strong><ul class="sub"><li>The day after a completed visit the client gets “How was your cut?” with a review link.</li></ul></li>
-          <li><strong>Client writes a review</strong><ul class="sub"><li>Stars and a short text, signed in, for that appointment only.</li></ul></li>
-          <li><strong>Owner moderates</strong><ul class="sub"><li>Approve or hide. Only approved reviews appear on the homepage.</li></ul></li>
+          <li><strong>Owner closes the visit</strong><ul class="sub"><li>On a confirmed appointment, from its day onward, press <b>Cut done</b>.</li><li>Choose <b>Paid in full</b>, <b>Paid another amount</b> (money received, and what is still owed as a debt) or <b>Free cut</b>. A private note is optional.</li><li>The payment can be corrected later, and a visit can be marked <b>Missed</b> instead.</li></ul></li>
+          <li><strong>Review request</strong><ul class="sub"><li>At once, the client gets “Your cut is done. How was it?” with a personal link. Skipped when the owner’s client emails switch or the client’s own email switch is off, or when there is no email address. For those clients the card has a WhatsApp “Ask for a review” link.</li></ul></li>
+          <li><strong>Client writes a review</strong><ul class="sub"><li>Stars and a short text, for that visit only. The link needs no sign-in. The client chooses whether to show their profile photo; it is hidden by default.</li></ul></li>
+          <li><strong>Owner moderates</strong><ul class="sub"><li>The owner gets an email, reads the review, then posts it live or rejects it. Only reviews posted live appear on the website.</li></ul></li>
         </ol>
-        <div class="aside-grid"><div class="box mail"><span class="lbl">Emails</span><div class="mail-list"><span class="mail-pill">How was your cut?</span></div></div></div>
+        <div class="aside-grid"><div class="box mail"><span class="lbl">Emails</span><div class="mail-list"><span class="mail-pill">Your cut is done. How was it?</span><span class="mail-pill">New review to read</span></div></div></div>
       </article>
 
       <article class="flow" id="history">
@@ -362,7 +364,7 @@ a:focus-visible { outline: 1px solid var(--gilt); outline-offset: 3px }
       </article>
 
       <article class="flow" id="clients">
-        <div class="flow-head"><div><h3>Clients</h3><div class="meta"><span><b>Who:</b> an owner</span><span><b>Starts from:</b> admin → Clients</span></div></div><span class="chip planned">Planned</span></div>
+        <div class="flow-head"><div><h3>Clients</h3><div class="meta"><span><b>Who:</b> an owner</span><span><b>Starts from:</b> admin → Clients</span></div></div><span class="chip live">Live</span></div>
         <ol class="steps">
           <li><strong>Client list</strong><ul class="sub"><li>Search by name, email or phone. Sort by last visit, visits or name.</li><li>Each row: name, phone, visits, last visit, upcoming appointment, a flag for repeated missed visits.</li></ul></li>
           <li><strong>Client profile</strong><ul class="sub"><li>Name, email, WhatsApp number, sign-in method (Google or password), client since, privacy notice accepted on.</li><li>Visits, cancellations, missed visits, total spent, average bill, usual cut and add-ons, last and next visit.</li><li>Their saved cut preferences and the notes they wrote on bookings.</li><li>Full history, including entries the client removed from their own view.</li><li>Their reviews and the review status.</li></ul></li>
@@ -370,12 +372,33 @@ a:focus-visible { outline: 1px solid var(--gilt); outline-offset: 3px }
         </ol>
       </article>
 
+      <article class="flow" id="money">
+        <div class="flow-head"><div><h3>Money and debts</h3><div class="meta"><span><b>Who:</b> an owner</span><span><b>Starts from:</b> admin → Money, admin → Debts</span></div></div><span class="chip live">Live</span></div>
+        <ol class="steps">
+          <li><strong>Money comes in by itself</strong><ul class="sub"><li>Every closed cut adds what was really received, on the day of the visit. A free cut adds nothing, and any cut can be changed later.</li></ul></li>
+          <li><strong>Typing by hand</strong><ul class="sub"><li><b>I spent</b> (amount, date, category, where), <b>I took out</b> (from savings), <b>Money came in</b>, and <b>Starting money</b>, each marked business or personal.</li></ul></li>
+          <li><strong>What it shows</strong><ul class="sub"><li><b>Money you have now</b>: everything in, less everything spent or taken out, whatever the filter.</li><li>Filters: today, 7 days, this month, this year, all time or chosen dates, and business or personal.</li><li>Earned, spent, taken out, left over, cuts, average per cut, free cuts, paid short, a chart, a daily, monthly and yearly table, where the money went, every movement, and a spreadsheet download.</li></ul></li>
+          <li><strong>Debts</strong><ul class="sub"><li>Saved when closing a cut, or added by hand from a client’s line. The Debts section lists who owes what.</li><li><b>Repaid</b> (full or part) counts as money in on that day. <b>Remind by email</b> or on WhatsApp only when the owner presses it. <b>Forgive</b> clears it. Clients never see debts in their account.</li></ul></li>
+        </ol>
+        <div class="aside-grid"><div class="box mail"><span class="lbl">Emails</span><div class="mail-list"><span class="mail-pill">A small note from 3kee</span></div></div></div>
+      </article>
+
+      <article class="flow" id="gifts">
+        <div class="flow-head"><div><h3>Gifts to one client</h3><div class="meta"><span><b>Who:</b> an owner, then that client</span><span><b>Starts from:</b> admin → Clients → open a client</span></div></div><span class="chip live">Live</span></div>
+        <ol class="steps">
+          <li><strong>Owner sends a gift</strong><ul class="sub"><li>A free cut, or an amount off, with a title, a message and an optional end date. For accounts only; a walk-in gets a WhatsApp link instead.</li></ul></li>
+          <li><strong>Client uses it</strong><ul class="sub"><li>It waits in their account. <b>Use my gift</b> opens booking with the normal price crossed out. Add-ons stay at their normal price, and a gift does not combine with an offer.</li></ul></li>
+          <li><strong>One booking only</strong><ul class="sub"><li>If that booking is cancelled or declined, the gift comes back. An owner can cancel a gift that is still waiting.</li></ul></li>
+        </ol>
+        <div class="aside-grid"><div class="box mail"><span class="lbl">Emails</span><div class="mail-list"><span class="mail-pill">A gift from Skee</span></div></div></div>
+      </article>
+
       <article class="flow" id="moderation">
-        <div class="flow-head"><div><h3>Review moderation</h3><div class="meta"><span><b>Who:</b> an owner</span><span><b>Starts from:</b> admin → Reviews (badge shows how many wait)</span></div></div><span class="chip planned">Planned</span></div>
+        <div class="flow-head"><div><h3>Review moderation</h3><div class="meta"><span><b>Who:</b> an owner</span><span><b>Starts from:</b> admin → Reviews (badge shows how many wait)</span></div></div><span class="chip live">Live</span></div>
         <ol class="steps">
           <li><strong>Only real visits can be reviewed</strong><ul class="sub"><li>A review is tied to one completed appointment; one review per visit.</li></ul></li>
-          <li><strong>Automatic flags before you read it</strong><ul class="sub"><li>Contains a link, contains a phone number, mentions the address or directions (private location), bad language, 1–2 stars (suggests a private follow-up).</li></ul></li>
-          <li><strong>Decide</strong><ul class="sub"><li><b>Approve</b>: published with “verified visit” and the cut name; the client sees “Review published on the site”.</li><li><b>Reply as Skee</b>: a short reply shown under the review, signed Skee.</li><li><b>Reject</b>: hidden and kept in the archive; can be approved later.</li><li><b>Delete</b>: removed for good.</li><li>Approved reviews can be unpublished at any time.</li></ul></li>
+          <li><strong>Automatic flags before you read it</strong><ul class="sub"><li>Low rating (1–2 stars), contains a link, contains a phone number.</li></ul></li>
+          <li><strong>Decide</strong><ul class="sub"><li><b>Post it live</b>: published with “verified” and the cut name; the client sees “Your review is on the website” in their history.</li><li><b>Reply as Skee</b>: a short reply shown under the review.</li><li><b>Reject</b> or <b>Take it down</b>: not on the website; the client sees “Your review was not published”.</li><li><b>Delete</b>: removed for good.</li></ul></li>
         </ol>
         <div class="aside-grid"><div class="box mail"><span class="lbl">Emails</span><div class="mail-list"><span class="mail-pill">Thank you for your review <span class="chip proposed" style="margin-left:6px">Proposed</span></span></div></div></div>
       </article>
@@ -468,7 +491,10 @@ a:focus-visible { outline: 1px solid var(--gilt); outline-offset: 3px }
             <tr><td>Today at 3kee: {time}</td><td>Morning of the appointment day</td><td>Website</td><td>Cut, time, total, location link</td><td><span class="chip planned">Template ready</span></td></tr>
             <tr><td>Your 3kee appointment has moved</td><td>Date or time changed</td><td>Website</td><td>New date and time, total</td><td><span class="chip planned">Template ready</span></td></tr>
             <tr><td>Your 3kee appointment was cancelled</td><td>Client or owner cancels</td><td>Website</td><td>Date and time, Book another time</td><td><span class="chip planned">Template ready</span></td></tr>
-            <tr><td>How was your cut?</td><td>Day after a completed visit</td><td>Website</td><td>Review link</td><td><span class="chip planned">Template ready</span></td></tr>
+            <tr><td>Your cut is done. How was it?</td><td>When the owner confirms the cut is done</td><td>Website</td><td>Personal review link</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td>A gift from Skee</td><td>An owner sends a gift to one client</td><td>Website</td><td>Gift, value, end date, message</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td>A small note from 3kee</td><td>An owner presses Remind on a debt</td><td>Website</td><td>Amount still open</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td>New review to read</td><td>A client sends a review (to owners)</td><td>Website</td><td>Client, rating, text</td><td><span class="chip live">Live</span></td></tr>
             <tr class="section"><td colspan="5">Suggested additions · need your approval</td></tr>
             <tr><td>We couldn’t take this time</td><td>Owner declines a request</td><td>Website</td><td>Requested time, Book another time</td><td><span class="chip proposed">Proposed</span></td></tr>
             <tr><td>A chair just opened</td><td>Owner approves offering a cancelled slot</td><td>Website</td><td>Date and time, Book this time</td><td><span class="chip proposed">Proposed</span></td></tr>

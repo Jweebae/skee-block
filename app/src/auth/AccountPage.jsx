@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import logo from '../assets/skee-logo-white.svg'
 import { supabase } from '../lib/supabase'
 import { callBookings, dayLabel, algiersParts, freeTimes, whatsappLink, STATUS_LABELS } from '../lib/bookingsApi'
-import { formatPrice, getPreviewDates } from '../booking/catalog'
+import { BASE_CUT_PRICE, formatPrice, getPreviewDates } from '../booking/catalog'
 import { previewSlots } from '../settings/studioSettings'
 import { STUDIO_PHONE } from '../settings/studioContact'
 import PhoneField from '../lib/PhoneField'
@@ -22,12 +22,14 @@ const CANCEL_HOURS = 3
 const LIVE = ['requested', 'confirmed']
 
 async function loadAccount(userId) {
-  const [bookings, profile] = await Promise.all([
+  const [bookings, profile, reviews, gifts] = await Promise.all([
     supabase.from('bookings').select('*').eq('client_id', userId).order('starts_at', { ascending: false }),
     supabase.from('client_profiles').select('*').eq('user_id', userId).maybeSingle(),
+    supabase.from('reviews').select('booking_id, status').eq('client_id', userId),
+    supabase.from('client_gifts').select('*').eq('client_id', userId).eq('status', 'active').order('created_at', { ascending: false }),
   ])
   if (bookings.error) return { error: 'Your appointments could not be loaded. Check your connection and try again.', now: Date.now() }
-  return { bookings: bookings.data, profile: profile.data, now: Date.now(), error: '' }
+  return { bookings: bookings.data, profile: profile.data, reviews: reviews.data || [], gifts: gifts.data || [], now: Date.now(), error: '' }
 }
 
 const extrasText = booking => (booking.addons || []).map(item => item.typeName === 'Standard' ? item.name : `${item.name} (${item.typeName})`).join(', ')
@@ -89,7 +91,7 @@ function Upcoming({ booking, settings, now, onChanged }) {
       <h2 className="serif">{booking.service_name}</h2>
       <p>{dayLabel(booking.starts_at)} · {time} · {booking.duration_minutes} min · with Skee</p>
       {extrasText(booking) && <p className="acct-muted">+ {extrasText(booking)}</p>}
-      <p className="acct-muted">{formatPrice(booking.total_price)}{booking.offer_name ? ` · ${booking.offer_name} offer, usual ${formatPrice(booking.usual_price)}` : ''} · paid at the studio</p>
+      <p className="acct-muted">{formatPrice(booking.total_price)}{booking.offer_name ? ` · ${booking.offer_name}${booking.gift_id ? '' : ' offer'}, usual ${formatPrice(booking.usual_price)}` : ''} · paid at the studio</p>
       {mode === 'reschedule' ? <Reschedule booking={booking} settings={settings} onDone={onChanged} onCancel={() => setMode('')} /> : <div className="acct-actions">
         {!lateForChanges && <button type="button" className="acct-btn" onClick={() => setMode('reschedule')}>Reschedule</button>}
         {canCancel && (mode === 'cancel'
@@ -115,12 +117,16 @@ function Upcoming({ booking, settings, now, onChanged }) {
   </section>
 }
 
-function History({ bookings, now, onChanged }) {
+const REVIEW_STATES = { pending: 'Your review is with Skee', approved: 'Your review is on the website', rejected: 'Your review was not published' }
+
+function History({ bookings, reviews, now, onChanged, onBook }) {
   const [tab, setTab] = useState('completed')
   const [error, setError] = useState('')
   const past = bookings.filter(item => !LIVE.includes(item.status) || new Date(item.ends_at).getTime() <= now)
+  const visible = bookings.filter(item => !item.client_hidden)
   const tabs = {
     completed: past.filter(item => !item.client_hidden && item.status === 'completed'),
+    all: visible,
     cancelled: past.filter(item => !item.client_hidden && item.status !== 'completed'),
     deleted: past.filter(item => item.client_hidden),
   }
@@ -129,21 +135,37 @@ function History({ bookings, now, onChanged }) {
     try { await callBookings('hide', { id: booking.id, hidden }); onChanged(hidden ? 'Removed from your history. You can restore it from Deleted.' : 'Restored to your history.') }
     catch (problem) { setError(problem.message) }
   }
-  const statusLine = item => item.status === 'requested' ? 'Expired · Skee did not answer in time' : item.status === 'cancelled' ? `Cancelled by ${item.cancelled_by === 'client' ? 'you' : 'the studio'}` : STATUS_LABELS[item.status]
+  const statusLine = item => item.status === 'requested' ? new Date(item.ends_at).getTime() > now ? 'Under review' : 'Expired · Skee did not answer in time' : item.status === 'cancelled' ? `Cancelled by ${item.cancelled_by === 'client' ? 'you' : 'the studio'}` : STATUS_LABELS[item.status]
+  const reviewOf = item => reviews.find(row => row.booking_id === item.id)
   return <section className="acct-history" aria-labelledby="acct-history-title">
     <div className="acct-history-head"><h2 id="acct-history-title" className="serif">History</h2>
-      <div className="acct-tabs" role="group" aria-label="History">{[['completed', 'Completed'], ['cancelled', 'Cancelled'], ['deleted', 'Deleted']].map(([id, label]) => <button key={id} type="button" aria-pressed={tab === id} onClick={() => setTab(id)}>{label} {tabs[id].length}</button>)}</div>
+      <div className="acct-tabs" role="group" aria-label="History">{[['completed', 'Done cuts'], ['all', 'All bookings'], ['cancelled', 'Cancelled'], ['deleted', 'Deleted']].map(([id, label]) => <button key={id} type="button" aria-pressed={tab === id} onClick={() => setTab(id)}>{label} {tabs[id].length}</button>)}</div>
     </div>
-    {tabs[tab].length === 0 ? <p className="acct-muted acct-empty">{tab === 'completed' ? 'Your completed visits will appear here.' : tab === 'cancelled' ? 'No cancelled, declined or missed appointments.' : 'Nothing removed.'}</p>
-      : <ul className="acct-rows">{tabs[tab].map(item => <li key={item.id}>
-        <span className="acct-when">{dayLabel(item.starts_at, { day: '2-digit', month: 'short', year: 'numeric' })}<small>{algiersParts(item.starts_at).time}</small></span>
-        <span className="acct-what"><span className="serif">{item.service_name}</span><small>{statusLine(item)}{extrasText(item) ? ` · + ${extrasText(item)}` : ''}</small></span>
-        <span className="acct-price">{formatPrice(item.total_price)}</span>
-        <button type="button" className="acct-btn" onClick={() => hide(item, !item.client_hidden)}>{item.client_hidden ? 'Restore' : 'Remove'}</button>
-      </li>)}</ul>}
+    {tabs[tab].length === 0 ? <p className="acct-muted acct-empty">{tab === 'completed' ? 'Your finished cuts will appear here.' : tab === 'all' ? 'Your bookings will appear here.' : tab === 'cancelled' ? 'No cancelled, declined or missed appointments.' : 'Nothing removed.'}</p>
+      : <ul className="acct-rows">{tabs[tab].map(item => {
+        const review = reviewOf(item)
+        const hideable = !LIVE.includes(item.status) || new Date(item.ends_at).getTime() <= now
+        return <li key={item.id}>
+          <span className="acct-when">{dayLabel(item.starts_at, { day: '2-digit', month: 'short', year: 'numeric' })}<small>{algiersParts(item.starts_at).time}</small></span>
+          <span className="acct-what"><span className="serif">{item.service_name}</span><small>{statusLine(item)}{extrasText(item) ? ` · + ${extrasText(item)}` : ''}{review ? ` · ${REVIEW_STATES[review.status]}` : ''}</small></span>
+          <span className="acct-price">{item.on_the_house ? 'On the house' : formatPrice(item.total_price)}</span>
+          <span className="acct-row-actions">
+            {item.status === 'completed' && !review && !item.client_hidden && <a className="acct-btn acct-btn-gold" href={`#review/${item.review_token}`}>Leave a review</a>}
+            {item.status === 'completed' && !item.client_hidden && <button type="button" className="acct-btn" onClick={() => onBook(item.service_id)}>Book again</button>}
+            {hideable && <button type="button" className="acct-btn" onClick={() => hide(item, !item.client_hidden)}>{item.client_hidden ? 'Restore' : 'Remove'}</button>}
+          </span>
+        </li>
+      })}</ul>}
     <p className="acct-muted acct-note">Remove hides a visit from your history; you can restore it from Deleted.</p>
     {error && <p className="acct-error" role="alert">{error}</p>}
   </section>
+}
+
+function Gifts({ gifts, onBook }) {
+  return <section className="acct-gifts" aria-label="Gifts from Skee">{gifts.map(gift => <article key={gift.id} className="acct-gift">
+    <div><span className="acct-label acct-gold">A gift from Skee</span><h2 className="serif">{gift.title}</h2>{gift.message && <p>{gift.message}</p>}<p className="acct-muted">{gift.kind === 'free_cut' ? `One free cut, worth ${formatPrice(BASE_CUT_PRICE)}` : `${formatPrice(gift.amount)} off your visit`}{gift.expires_on ? ` · valid until ${dayLabel(`${gift.expires_on}T12:00:00Z`, { day: 'numeric', month: 'long' })}` : ''}</p></div>
+    <button type="button" className="acct-btn acct-btn-primary" onClick={() => onBook(null, gift.id)}>Use my gift</button>
+  </article>)}</section>
 }
 
 function Preferences({ userId, profile, onSaved }) {
@@ -192,7 +214,7 @@ function UsernameBox({ current, onSaved }) {
 }
 
 export default function AccountPage({ client, settings, onClose, onBook, onSignIn }) {
-  const [state, setState] = useState({ bookings: null, profile: null, now: 0, error: '' })
+  const [state, setState] = useState({ bookings: null, profile: null, reviews: [], gifts: [], now: 0, error: '' })
   const [version, setVersion] = useState(0)
   const [message, setMessage] = useState('')
   const userId = client.user?.id
@@ -222,7 +244,7 @@ export default function AccountPage({ client, settings, onClose, onBook, onSignI
       {!client.ready ? <p className="acct-muted">Checking your sign-in…</p> : !client.user || !client.profileComplete ? <section className="acct-signed-out"><h1 className="serif">Your place at the <em>Block</em>.</h1><p>Sign in to see your appointments and history.</p><button type="button" className="acct-btn acct-btn-primary" onClick={onSignIn}>Sign in</button></section> : <>
         <div className="acct-hello">
           <div><span className="acct-label">Signed in{since ? ` · client since ${since}` : ''}</span><h1 className="serif">Salam, <em>{name || 'friend'}</em>.</h1></div>
-          <dl className="acct-stats"><div><dt>Visits</dt><dd className="serif">{completed.length}</dd></div><div><dt>Usual</dt><dd>{usual?.service_name || '—'}</dd></div></dl>
+          <dl className="acct-stats"><div><dt>Done cuts</dt><dd className="serif">{completed.length}</dd></div><div><dt>Last cut</dt><dd>{completed[0] ? dayLabel(completed[0].starts_at, { day: 'numeric', month: 'short' }) : '—'}</dd></div><div><dt>Usual</dt><dd>{usual?.service_name || '—'}</dd></div></dl>
         </div>
         <ProfileNudge user={client.user} status={profileStatus} variant="account" />
         {message && <p className="acct-notice" role="status">{message}</p>}
@@ -230,7 +252,8 @@ export default function AccountPage({ client, settings, onClose, onBook, onSignI
         {state.bookings === null ? <p className="acct-muted">Loading your appointments…</p> : <>
           {upcoming.length ? upcoming.map(item => <Upcoming key={`${item.id}-${item.updated_at}`} booking={item} settings={settings} now={state.now} onChanged={changed} />)
             : <section className="acct-upcoming acct-upcoming-empty"><div className="acct-upcoming-main"><span className="acct-label">Upcoming</span><h2 className="serif">No appointment yet.</h2><p>Choose your cut, add the extras you like and pick your hour.</p><div className="acct-actions"><button type="button" className="acct-btn acct-btn-primary" onClick={() => onBook(usual?.service_id || null)}>Book the chair</button></div></div></section>}
-          <History bookings={bookings} now={state.now} onChanged={changed} />
+          {state.gifts.length > 0 && <Gifts gifts={state.gifts} onBook={onBook} />}
+          <History bookings={bookings} reviews={state.reviews} now={state.now} onChanged={changed} onBook={onBook} />
           <div className="acct-grid">
             <section className="acct-box" aria-labelledby="acct-photo-title"><span id="acct-photo-title" className="acct-label">Profile photo</span><ProfilePhoto userId={userId} path={profileStatus.profile?.avatar_path} name={name} /><p className="acct-muted">Optional. Only Skee sees it. With a review, it is shown only if you choose.</p></section>
             <Preferences key={state.profile?.updated_at || 'new'} userId={userId} profile={state.profile} onSaved={changed} />

@@ -18,6 +18,8 @@ const CLIENT_CANCEL_HOURS = 3
 const MAX_ACTIVE_PER_CLIENT = 2
 const LIVE = ['requested', 'confirmed']
 const GRAPH = 'https://graph.facebook.com/v22.0'
+const UUID = /^[0-9a-f-]{36}$/
+const MAX_AMOUNT = 1000000000
 
 class Problem extends Error {
   constructor(public status: number, public code: string) { super(code) }
@@ -178,12 +180,13 @@ function emailValues(booking: any, location?: string) {
     date: dayLabel(at),
     time: algiersParts(at).time,
     duration: `${booking.duration_minutes} min`,
-    total: booking.offer_name ? `${money(booking.total_price)} (${booking.offer_name} offer, usual ${money(booking.usual_price)})` : money(booking.total_price),
+    total: booking.offer_name ? `${money(booking.total_price)} (${booking.offer_name}${booking.gift_id ? '' : ' offer'}, usual ${money(booking.usual_price)})` : money(booking.total_price),
     notes: booking.notes || 'None',
     phone: booking.client_phone || 'Not given',
     location_url: location || `https://wa.me/${STUDIO_WHATSAPP}?text=${encodeURIComponent(`Salam Skee, I need the location for booking ${booking.code}.`)}`,
     admin_url: `${SITE}/#admin`,
     account_url: SITE,
+    review_url: `${SITE}/#review/${booking.review_token}`,
   }
 }
 
@@ -259,7 +262,9 @@ async function sendWhatsApp(db: SupabaseClient, to: string | null, template: str
 async function notifyClient(db: SupabaseClient, booking: any, template: string, kind: string) {
   const flags = await switches(db)
   const log = { ...(booking.emails ?? {}) }
-  const wantsEmail = flags.clientEmails && booking.client_email && !log[kind]
+  // The client's own Email switch in their account.
+  const { data: profile } = booking.client_id ? await db.from('client_profiles').select('email_notifications').eq('user_id', booking.client_id).maybeSingle() : { data: null }
+  const wantsEmail = flags.clientEmails && profile?.email_notifications !== false && booking.client_email && !log[kind]
   const wantsWhatsApp = flags.whatsappMessages && booking.client_phone && booking.reminder_channel === 'whatsapp' && !log[`wa_${kind}`]
   if (!wantsEmail && !wantsWhatsApp) return
   const place = ['booking-confirmed', 'booking-reminder'].includes(template) ? (await location(db)).location_url ?? undefined : undefined
@@ -331,13 +336,21 @@ async function createRequest(db: SupabaseClient, user: User, body: any) {
   const { count } = await db.from('bookings').select('id', { count: 'exact', head: true }).eq('client_id', user.id).in('status', LIVE).gt('ends_at', new Date().toISOString())
   if ((count ?? 0) >= MAX_ACTIVE_PER_CLIENT) fail(409, 'too_many_active')
   const startsAt = instant(body.date, body.time)
-  const booking = await insertBooking(db, {
-    client_id: user.id, client_name: fullName(user), client_email: user.email, client_phone: phone,
-    service_id: visit.service.id, service_name: visit.service.name, addons: visit.addons, preferences,
-    notes: cleanText(body.notes, 1000), reminder_channel: channel, total_price: deal?.total ?? visit.total, duration_minutes: visit.duration,
-    offer_name: deal?.name ?? null, usual_price: deal ? visit.total : null,
-    starts_at: startsAt.toISOString(), ends_at: new Date(startsAt.getTime() + visit.duration * 60000).toISOString(),
-  })
+  const bookingId = crypto.randomUUID()
+  const gift = !deal && body.giftId ? await holdGift(db, user, body.giftId, bookingId) : null
+  let booking
+  try {
+    booking = await insertBooking(db, {
+      id: bookingId, client_id: user.id, client_name: fullName(user), client_email: user.email, client_phone: phone,
+      service_id: visit.service.id, service_name: visit.service.name, addons: visit.addons, preferences,
+      notes: cleanText(body.notes, 1000), reminder_channel: channel, total_price: deal?.total ?? visit.total - (gift ? giftOff(gift, visit.total) : 0), duration_minutes: visit.duration,
+      offer_name: deal?.name ?? gift?.title ?? null, usual_price: deal || gift ? visit.total : null, gift_id: gift?.id ?? null,
+      starts_at: startsAt.toISOString(), ends_at: new Date(startsAt.getTime() + visit.duration * 60000).toISOString(),
+    })
+  } catch (problem) {
+    if (gift) await releaseGift(db, { id: bookingId, gift_id: gift.id })
+    throw problem
+  }
   await db.from('client_profiles').upsert({ user_id: user.id, phone, reminder_channel: channel, updated_at: new Date().toISOString() })
   await notifyClient(db, booking, 'booking-received', 'received')
   await notifyOwners(db, booking, 'owner-new-request', 'owner_new')
@@ -351,6 +364,7 @@ async function clientCancel(db: SupabaseClient, user: User, body: any) {
   if (booking.status === 'confirmed' && new Date(booking.starts_at).getTime() - Date.now() < CLIENT_CANCEL_HOURS * 3600000) fail(409, 'too_late')
   if (new Date(booking.starts_at).getTime() <= Date.now()) fail(409, 'too_late')
   const updated = await updateBooking(db, booking.id, { status: 'cancelled', cancelled_by: 'client' })
+  await releaseGift(db, booking)
   await notifyClient(db, updated, 'booking-cancelled', 'cancelled')
   await notifyOwners(db, updated, 'owner-cancelled', 'owner_cancelled')
   return { booking: publicBooking(updated) }
@@ -406,7 +420,6 @@ const OWNER_MOVES: Record<string, { from: string[]; to: string; afterStart?: boo
   confirm: { from: ['requested'], to: 'confirmed' },
   decline: { from: ['requested'], to: 'declined' },
   cancel: { from: ['requested', 'confirmed'], to: 'cancelled' },
-  complete: { from: ['confirmed', 'no_show'], to: 'completed', afterStart: true },
   no_show: { from: ['confirmed', 'completed'], to: 'no_show', afterStart: true },
 }
 
@@ -416,7 +429,9 @@ async function ownerUpdate(db: SupabaseClient, body: any) {
   const booking = await getBooking(db, body.id)
   if (!move.from.includes(booking.status)) fail(409, 'wrong_status')
   if (move.afterStart && new Date(booking.starts_at).getTime() > Date.now()) fail(409, 'not_started')
-  const updated = await updateBooking(db, booking.id, { status: move.to, cancelled_by: move.to === 'cancelled' ? 'studio' : booking.cancelled_by })
+  if (move.to === 'no_show') await clearPayment(db, booking.id)
+  const updated = await updateBooking(db, booking.id, { status: move.to, cancelled_by: move.to === 'cancelled' ? 'studio' : booking.cancelled_by, on_the_house: move.to === 'no_show' ? false : booking.on_the_house })
+  if (['declined', 'cancelled'].includes(move.to)) await releaseGift(db, booking)
   if (move.to === 'confirmed') await notifyClient(db, updated, 'booking-confirmed', 'confirmed')
   if (move.to === 'declined') await notifyClient(db, updated, 'booking-declined', 'declined')
   if (move.to === 'cancelled') await notifyClient(db, updated, 'booking-cancelled', 'cancelled')
@@ -463,6 +478,213 @@ async function ownerWalkIn(db: SupabaseClient, body: any) {
   return { booking: publicBooking(booking) }
 }
 
+// ---------- closing a visit ----------
+// The owner confirms the cut is done and records what came in. What a client paid or owes stays in owner-only tables,
+// never on the booking, because clients can read their own bookings.
+const wholeAmount = (value: unknown) => {
+  const amount = Number(value ?? 0)
+  if (!Number.isInteger(amount) || amount < 0 || amount > MAX_AMOUNT) fail(400, 'bad_amount')
+  return amount
+}
+
+async function debtRepaid(db: SupabaseClient, debtId: string) {
+  const { data } = await db.from('money_entries').select('amount').eq('debt_id', debtId)
+  return (data ?? []).reduce((sum, row) => sum + row.amount, 0)
+}
+
+async function savePayment(db: SupabaseClient, booking: any, body: any) {
+  const free = body.free === true
+  const received = free ? 0 : wholeAmount(body.received)
+  const owed = free ? 0 : wholeAmount(body.debt)
+  const { data: debt } = await db.from('client_debts').select('id').eq('booking_id', booking.id).maybeSingle()
+  if (debt && owed < await debtRepaid(db, debt.id)) fail(409, 'debt_repaid')
+  const note = cleanText(body.note, 500)
+  const paidOn = algiersParts(new Date(booking.starts_at)).date
+  const { error } = await db.from('visit_payments').upsert({ booking_id: booking.id, amount_received: received, is_free: free, note, paid_on: paidOn, updated_at: new Date().toISOString() })
+  if (error) { console.error('payment failed', error); fail(500, 'save_failed') }
+  if (owed > 0) {
+    const row = { booking_id: booking.id, client_id: booking.client_id, client_name: booking.client_name, client_phone: booking.client_phone, client_email: booking.client_email, amount: owed, note, created_on: paidOn }
+    const { error: problem } = await db.from('client_debts').upsert(row, { onConflict: 'booking_id' })
+    if (problem) { console.error('debt failed', problem); fail(500, 'save_failed') }
+  } else if (debt) await db.from('client_debts').delete().eq('id', debt.id)
+  return free
+}
+
+async function clearPayment(db: SupabaseClient, bookingId: string) {
+  const { data: debt } = await db.from('client_debts').select('id').eq('booking_id', bookingId).maybeSingle()
+  if (debt && await debtRepaid(db, debt.id) > 0) fail(409, 'debt_repaid')
+  await db.from('client_debts').delete().eq('booking_id', bookingId)
+  await db.from('visit_payments').delete().eq('booking_id', bookingId)
+}
+
+// Also corrects a visit already closed, in which case the client hears nothing new.
+async function ownerClose(db: SupabaseClient, body: any) {
+  const booking = await getBooking(db, body.id)
+  if (!['confirmed', 'no_show', 'completed'].includes(booking.status)) fail(409, 'wrong_status')
+  if (algiersParts(new Date(booking.starts_at)).date > algiersParts(new Date()).date) fail(409, 'not_today')
+  const free = await savePayment(db, booking, body)
+  const updated = await updateBooking(db, booking.id, { status: 'completed', on_the_house: free })
+  if (booking.status !== 'completed') await notifyClient(db, updated, 'review-request', 'review_request')
+  return { booking: publicBooking(updated) }
+}
+
+async function ownerDebtNotify(db: SupabaseClient, body: any) {
+  if (typeof body.id !== 'string' || !UUID.test(body.id)) fail(400, 'bad_action')
+  const { data: debt } = await db.from('client_debts').select('*').eq('id', body.id).maybeSingle()
+  if (!debt) fail(404, 'not_found')
+  if (!debt.client_email) fail(409, 'no_email')
+  const left = debt.amount - await debtRepaid(db, debt.id)
+  if (left <= 0 || debt.forgiven_at) fail(409, 'wrong_status')
+  const values = { first_name: String(debt.client_name).split(' ')[0] || 'there', amount: money(left) }
+  const sent = await sendEmail([debt.client_email], 'debt-reminder', values, `debt-${debt.id}-${algiersParts(new Date()).date}`)
+  if (!sent) fail(502, 'email_failed')
+  await db.from('client_debts').update({ last_reminded_at: new Date().toISOString(), reminders: debt.reminders + 1 }).eq('id', debt.id)
+  return { ok: true }
+}
+
+// ---------- gifts to one client ----------
+const giftOff = (gift: any, total: number) => Math.min(total, gift.kind === 'free_cut' ? BASE_PRICE : Number(gift.amount) || 0)
+
+// A gift pays for one booking: the booking holds it, and it comes back if that booking falls through.
+async function holdGift(db: SupabaseClient, user: User, giftId: unknown, bookingId: string) {
+  if (typeof giftId !== 'string' || !UUID.test(giftId)) fail(409, 'gift_ended')
+  const { data: gift } = await db.from('client_gifts').select('*').eq('id', giftId).eq('client_id', user.id).maybeSingle()
+  if (!gift || gift.status !== 'active' || (gift.expires_on && gift.expires_on < algiersParts(new Date()).date)) fail(409, 'gift_ended')
+  const { data: held } = await db.from('client_gifts').update({ status: 'used', used_booking_id: bookingId }).eq('id', gift.id).eq('status', 'active').select('id')
+  if (!held?.length) fail(409, 'gift_ended')
+  return gift
+}
+async function releaseGift(db: SupabaseClient, booking: any) {
+  if (booking.gift_id) await db.from('client_gifts').update({ status: 'active', used_booking_id: null }).eq('id', booking.gift_id).eq('used_booking_id', booking.id)
+}
+
+async function ownerGift(db: SupabaseClient, body: any) {
+  if (typeof body.clientId !== 'string' || !UUID.test(body.clientId)) fail(400, 'bad_gift')
+  const kind = body.kind === 'amount_off' ? 'amount_off' : 'free_cut'
+  const amount = kind === 'amount_off' ? wholeAmount(body.amount) : 0
+  const title = cleanText(body.title, 80)
+  const expires = /^\d{4}-\d{2}-\d{2}$/.test(body.expiresOn ?? '') ? body.expiresOn : null
+  if (!title || (kind === 'amount_off' && !amount) || amount > 1000000 || (expires && expires < algiersParts(new Date()).date)) fail(400, 'bad_gift')
+  const { data: found } = await db.auth.admin.getUserById(body.clientId)
+  if (!found?.user?.email) fail(404, 'not_found')
+  const message = cleanText(body.message, 500)
+  const { data: gift, error } = await db.from('client_gifts').insert({ client_id: body.clientId, kind, amount, title, message, expires_on: expires }).select().single()
+  if (error) { console.error('gift failed', error); fail(500, 'save_failed') }
+  const values = {
+    first_name: found.user.user_metadata?.first_name || found.user.email.split('@')[0], gift_title: title, gift_message: message,
+    gift_value: kind === 'free_cut' ? 'One free cut' : `${money(amount)} off your next visit`,
+    gift_until: expires ? dayLabel(new Date(`${expires}T12:00:00Z`)) : 'No end date',
+    account_url: `${SITE}/#account`,
+  }
+  return { gift, emailed: await sendEmail([found.user.email], 'client-gift', values, `gift-${gift.id}`) }
+}
+
+async function ownerGiftCancel(db: SupabaseClient, body: any) {
+  if (typeof body.id !== 'string' || !UUID.test(body.id)) fail(400, 'bad_gift')
+  await db.from('client_gifts').update({ status: 'cancelled' }).eq('id', body.id).eq('status', 'active')
+  return { ok: true }
+}
+
+// ---------- clients ----------
+// Names and sign-in details live in the auth service, which browsers cannot list.
+async function ownerClients(db: SupabaseClient) {
+  const users: User[] = []
+  for (let page = 1; ; page++) {
+    const { data, error } = await db.auth.admin.listUsers({ page, perPage: 1000 })
+    if (error) fail(500, 'read_failed')
+    users.push(...data.users)
+    if (data.users.length < 1000) break
+  }
+  const { data: owners } = await db.from('studio_admins').select('user_id')
+  const ownerIds = new Set((owners ?? []).map(row => row.user_id))
+  return { accounts: users.filter(user => user.email).map(user => ({
+    id: user.id, email: user.email, name: fullName(user), created_at: user.created_at, last_sign_in_at: user.last_sign_in_at,
+    provider: user.app_metadata?.provider ?? 'email', owner: ownerIds.has(user.id),
+  })) }
+}
+
+// ---------- reviews ----------
+// The link in the review email carries a private token, so a client needs no sign-in and a walk-in with an email can
+// answer too. Nothing is published until an owner approves it.
+async function bookingByToken(db: SupabaseClient, token: unknown) {
+  if (typeof token !== 'string' || !UUID.test(token)) fail(404, 'not_found')
+  const { data } = await db.from('bookings').select('*').eq('review_token', token).maybeSingle()
+  if (data?.status !== 'completed') fail(404, 'not_found')
+  return data
+}
+
+async function reviewLookup(db: SupabaseClient, body: any) {
+  const booking = await bookingByToken(db, body.token)
+  const { data: review } = await db.from('reviews').select('status').eq('booking_id', booking.id).maybeSingle()
+  const { data: profile } = booking.client_id ? await db.from('client_profiles').select('avatar_path').eq('user_id', booking.client_id).maybeSingle() : { data: null }
+  return { first_name: String(booking.client_name).split(' ')[0], service: booking.service_name, date: booking.starts_at, reviewed: Boolean(review), has_photo: Boolean(profile?.avatar_path) }
+}
+
+const publicName = (name: string) => {
+  const parts = String(name).trim().split(/\s+/)
+  return parts.length > 1 ? `${parts[0]} ${parts[parts.length - 1].charAt(0).toUpperCase()}.` : parts[0]
+}
+function reviewFlags(text: string, rating: number) {
+  const flags: string[] = []
+  if (rating <= 2) flags.push('low_rating')
+  if (/https?:\/\/|www\.|\b[a-z0-9-]+\.(com|net|org|site|dz|fr)\b/i.test(text)) flags.push('link')
+  if (/\d[\d\s.-]{7,}\d/.test(text)) flags.push('phone_number')
+  return flags
+}
+
+async function reviewSubmit(db: SupabaseClient, body: any) {
+  const booking = await bookingByToken(db, body.token)
+  const rating = Number(body.rating)
+  const text = cleanText(body.body, 1000)
+  if (!Number.isInteger(rating) || rating < 1 || rating > 5 || !text) fail(400, 'bad_review')
+  const { error } = await db.from('reviews').insert({
+    booking_id: booking.id, client_id: booking.client_id, display_name: publicName(booking.client_name), service_name: booking.service_name,
+    rating, body: text, flags: reviewFlags(text, rating), show_photo: body.showPhoto === true,
+  })
+  if (error?.code === '23505') fail(409, 'already_reviewed')
+  if (error) { console.error('review failed', error); fail(500, 'save_failed') }
+  const flags = await switches(db)
+  if (flags.ownerAlerts) await sendEmail(await ownerEmails(db), 'owner-new-review', { client_name: booking.client_name, service: booking.service_name, rating: `${rating}/5`, review_text: text, admin_url: `${SITE}/#admin` }, `review-${booking.id}`)
+  return { ok: true }
+}
+
+async function publicReviews(db: SupabaseClient, body: any) {
+  const limit = Math.min(Math.max(Math.trunc(Number(body.limit)) || 3, 1), 12)
+  const page = Math.max(Math.trunc(Number(body.page)) || 0, 0)
+  const { data, count, error } = await db.from('reviews').select('id, display_name, service_name, rating, body, reply, published_at, show_photo, client_id', { count: 'exact' })
+    .eq('status', 'approved').order('published_at', { ascending: false }).range(page * limit, page * limit + limit - 1)
+  if (error) fail(500, 'read_failed')
+  const { data: ratings } = await db.from('reviews').select('rating').eq('status', 'approved')
+  const average = ratings?.length ? ratings.reduce((sum, row) => sum + row.rating, 0) / ratings.length : 0
+  // A photo appears only when the client chose so for that review. The bucket is private, so these links are short-lived.
+  const ids = (data ?? []).filter(row => row.show_photo && row.client_id).map(row => row.client_id)
+  const { data: profiles } = ids.length ? await db.from('client_profiles').select('user_id, avatar_path').in('user_id', ids).not('avatar_path', 'is', null) : { data: [] }
+  const paths = (profiles ?? []).map(row => row.avatar_path)
+  const { data: links } = paths.length ? await db.storage.from('client-photos').createSignedUrls(paths, 3600) : { data: [] }
+  const photos = Object.fromEntries((profiles ?? []).map((row, index) => [row.user_id, links?.[index]?.signedUrl ?? null]))
+  return {
+    total: count ?? 0, average,
+    reviews: (data ?? []).map(({ client_id, show_photo, ...row }) => ({ ...row, photo: show_photo ? photos[client_id] ?? null : null })),
+  }
+}
+
+async function ownerReview(db: SupabaseClient, body: any) {
+  if (typeof body.id !== 'string' || !UUID.test(body.id)) fail(400, 'bad_action')
+  if (body.move === 'delete') {
+    const { error } = await db.from('reviews').delete().eq('id', body.id)
+    if (error) fail(500, 'save_failed')
+    return { ok: true }
+  }
+  const changes: Record<string, unknown> = {}
+  if (body.move === 'approve') { changes.status = 'approved'; changes.published_at = new Date().toISOString() }
+  else if (body.move === 'reject') { changes.status = 'rejected'; changes.published_at = null }
+  else if (body.move !== 'reply') fail(400, 'bad_action')
+  if (body.reply !== undefined) changes.reply = cleanText(body.reply, 600) || null
+  const { error } = await db.from('reviews').update(changes).eq('id', body.id)
+  if (error) fail(500, 'save_failed')
+  return { ok: true }
+}
+
 // ---------- router ----------
 Deno.serve(async req => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors(req) })
@@ -472,6 +694,10 @@ Deno.serve(async req => {
     const body = await req.json().catch(() => ({}))
     const action = String(body.action ?? '')
     if (action === 'busy') return reply(req, 200, await busyTimes(db, body))
+    const publicActions: Record<string, (db: SupabaseClient, body: any) => Promise<unknown>> = {
+      reviews: publicReviews, review_lookup: reviewLookup, review_submit: reviewSubmit,
+    }
+    if (Object.hasOwn(publicActions, action)) return reply(req, 200, await publicActions[action](db, body))
 
     const user = await caller(req, db)
     if (!user?.email) fail(401, 'not_signed_in')
@@ -482,7 +708,8 @@ Deno.serve(async req => {
 
     if (!await isOwner(db, user!.id)) fail(403, 'not_allowed')
     const ownerActions: Record<string, (db: SupabaseClient, body: any) => Promise<unknown>> = {
-      owner_update: ownerUpdate, owner_move: ownerMove, walk_in: ownerWalkIn,
+      owner_update: ownerUpdate, owner_move: ownerMove, walk_in: ownerWalkIn, owner_close: ownerClose, owner_debt_notify: ownerDebtNotify,
+      owner_gift: ownerGift, owner_gift_cancel: ownerGiftCancel, owner_clients: ownerClients, owner_review: ownerReview,
     }
     if (ownerActions[action]) return reply(req, 200, await ownerActions[action](db, body))
     fail(400, 'unknown_action')

@@ -27,7 +27,7 @@ function Check() {
   return <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12l5 5 9-10" /></svg>
 }
 
-export default function BookingFlow({ settings, initialServiceId, initialAddons, initialStep = 0, initialOfferId, onClose, client, onSignIn, onOpenAccount, profileStatus }) {
+export default function BookingFlow({ settings, initialServiceId, initialAddons, initialStep = 0, initialOfferId, initialGiftId, onClose, client, onSignIn, onOpenAccount, profileStatus }) {
   const [draft] = useState(() => { const saved = readDraft(); return saved?.resume ? saved : null })
   const services = settings.services.filter(item => item.visible)
   const availableAddons = settings.addons.filter(item => item.visible).map(item => ({ ...item, types: item.types.filter(type => type.visible) })).filter(item => item.types.length)
@@ -42,6 +42,8 @@ export default function BookingFlow({ settings, initialServiceId, initialAddons,
   const [phone, setPhone] = useState(draft?.phone ?? '')
   const [offerId, setOfferId] = useState(draft?.offerId ?? initialOfferId ?? '')
   const [openedAt] = useState(() => Date.now())
+  const [giftId, setGiftId] = useState(draft?.giftId ?? initialGiftId ?? '')
+  const [gift, setGift] = useState(null)
   const [previewDone, setPreviewDone] = useState(false)
   const [dates] = useState(getPreviewDates)
   const [busy, setBusy] = useState([])
@@ -67,7 +69,9 @@ export default function BookingFlow({ settings, initialServiceId, initialAddons,
   // A deal sets what the client pays; the normal total stays beside it, crossed out. The server repeats this sum.
   const offer = settings.offers?.find(item => item.id === offerId)
   const quote = service ? offerQuote(offer, { serviceId, addons, menu: settings.addons, normalTotal: total, now: openedAt }) : null
-  const payable = quote?.total ?? total
+  // A gift from Skee takes its value off the visit; add-ons beyond it stay at their normal price. The server repeats this.
+  const giftOff = gift ? Math.min(total, gift.kind === 'free_cut' ? BASE_CUT_PRICE : gift.amount) : 0
+  const payable = quote?.total ?? total - giftOff
   const offerLost = Number(offer?.newPrice) > 0 && Boolean(service) && !quote && !needsType
   const times = freeTimes(previewSlots(settings.hours, dateId, duration), dateId, duration, busy)
   const bookableDates = dates.map(item => ({ ...item, closed: freeTimes(previewSlots(settings.hours, item.id, duration), item.id, duration, busy).length === 0 }))
@@ -99,11 +103,19 @@ export default function BookingFlow({ settings, initialServiceId, initialAddons,
     return () => { active = false }
   }, [userId])
 
+  useEffect(() => {
+    if (!giftId || !userId || !supabase) return
+    let active = true
+    supabase.from('client_gifts').select('*').eq('id', giftId).eq('status', 'active').maybeSingle()
+      .then(({ data }) => { if (active) setGift(data) })
+    return () => { active = false }
+  }, [giftId, userId])
+
   useEffect(() => { if (draft) writeDraft(null) }, [draft])
 
   async function sendRequest() {
     if (!signedIn) {
-      writeDraft({ resume: true, serviceId, addonChoices, dateId, time, preferences, notes, channel, phone, offerId })
+      writeDraft({ resume: true, serviceId, addonChoices, dateId, time, preferences, notes, channel, phone, offerId, giftId })
       onSignIn()
       return
     }
@@ -113,7 +125,7 @@ export default function BookingFlow({ settings, initialServiceId, initialAddons,
       const data = await callBookings('create', {
         serviceId, addons: addons.map(item => ({ addonId: item.id, typeId: addonChoices[item.id] })),
         date: dateId, time, preferences, notes, channel: channel.toLowerCase(), phone: normalizeDzMobile(phone),
-        offerId: quote ? offerId : undefined,
+        offerId: quote ? offerId : undefined, giftId: gift && !quote ? gift.id : undefined,
       })
       setResult(data.booking)
       setPreviewDone(true)
@@ -122,6 +134,7 @@ export default function BookingFlow({ settings, initialServiceId, initialAddons,
       setSendError(problem.message)
       if (problem.code === 'slot_taken' || problem.code === 'too_soon') { setTime(''); setBusyVersion(value => value + 1); setStep(2) }
       if (problem.code === 'offer_ended' || problem.code === 'offer_changed') setOfferId('')
+      if (problem.code === 'gift_ended') { setGiftId(''); setGift(null) }
     } finally {
       setSending(false)
     }
@@ -238,7 +251,7 @@ export default function BookingFlow({ settings, initialServiceId, initialAddons,
               {!signedIn && <p className="booking-hint">You need a 3kee account to send a request. Your choices are kept while you sign in or create one.</p>}
             </div>}
 
-            <div className="booking-controls"><button className="booking-secondary" onClick={() => step === 0 ? onClose() : setStep(current => current - 1)}>{step === 0 ? 'Back to home' : 'Back'}</button><span className="booking-mobile-total"><span className="lbl">{quote ? 'Offer total' : addons.length ? 'Total' : 'Base cut'}{service ? ` · ${duration} min` : ''}</span><strong>{quote && <s>{formatPrice(total)}</s>}{service ? formatPrice(payable) : 'Choose a cut'}</strong></span><button className="booking-primary" disabled={!canContinue} onClick={continueBooking}>{step === 3 ? (sending ? 'Sending…' : signedIn ? 'Send request' : 'Sign in to send') : step === 1 && !selectedAddons.length ? 'Skip add-ons' : 'Continue'}<span aria-hidden="true">→</span></button></div>
+            <div className="booking-controls"><button className="booking-secondary" onClick={() => step === 0 ? onClose() : setStep(current => current - 1)}>{step === 0 ? 'Back to home' : 'Back'}</button><span className="booking-mobile-total"><span className="lbl">{quote ? 'Offer total' : giftOff ? 'With your gift' : addons.length ? 'Total' : 'Base cut'}{service ? ` · ${duration} min` : ''}</span><strong>{(quote || giftOff > 0) && <s>{formatPrice(total)}</s>}{service ? formatPrice(payable) : 'Choose a cut'}</strong></span><button className="booking-primary" disabled={!canContinue} onClick={continueBooking}>{step === 3 ? (sending ? 'Sending…' : signedIn ? 'Send request' : 'Sign in to send') : step === 1 && !selectedAddons.length ? 'Skip add-ons' : 'Continue'}<span aria-hidden="true">→</span></button></div>
             {sendError && <p className="booking-error" role="alert">{sendError}</p>}
           </>}
         </div>
@@ -246,11 +259,11 @@ export default function BookingFlow({ settings, initialServiceId, initialAddons,
         <aside className="booking-summary" aria-label="Booking summary">
           <div className="booking-summary-header"><span className="lbl">Your booking</span><span className="lbl">with Skee</span></div>
           <h2 className="serif">{service?.name || 'Your chair awaits.'}</h2><p className="booking-summary-when">{when}</p>
-          {service && <><dl className="booking-price-lines"><div><dt>{service.name}</dt><dd>{formatPrice(BASE_CUT_PRICE)}</dd></div>{addons.map(item => <div key={item.id}><dt>+ {item.name}<small>{item.typeName} · +{item.duration} min</small></dt><dd>{formatPrice(item.price)}</dd></div>)}{quote && <div className="booking-offer-line"><dt>{quote.name} offer</dt><dd>− {formatPrice(total - payable)}</dd></div>}</dl>
-          <div className="booking-total" aria-live="polite" aria-atomic="true"><span className="lbl">{quote ? 'Offer total' : 'Total'} · {duration} min</span><span className="booking-total-prices">{quote && <s>{formatPrice(total)}</s>}<strong className="serif">{formatPrice(payable)}</strong></span></div></>}
+          {service && <><dl className="booking-price-lines"><div><dt>{service.name}</dt><dd>{formatPrice(BASE_CUT_PRICE)}</dd></div>{addons.map(item => <div key={item.id}><dt>+ {item.name}<small>{item.typeName} · +{item.duration} min</small></dt><dd>{formatPrice(item.price)}</dd></div>)}{quote && <div className="booking-offer-line"><dt>{quote.name} offer</dt><dd>− {formatPrice(total - payable)}</dd></div>}{!quote && giftOff > 0 && <div className="booking-offer-line"><dt>{gift.title}</dt><dd>− {formatPrice(giftOff)}</dd></div>}</dl>
+          <div className="booking-total" aria-live="polite" aria-atomic="true"><span className="lbl">{quote ? 'Offer total' : giftOff ? 'With your gift' : 'Total'} · {duration} min</span><span className="booking-total-prices">{(quote || giftOff > 0) && <s>{formatPrice(total)}</s>}<strong className="serif">{formatPrice(payable)}</strong></span></div></>}
           {needsType && <p className="booking-hint booking-type-pending" role="status">Choose a type for each selected add-on to complete your total.</p>}
           {offerLost && <p className="booking-hint booking-offer-lost" role="status">These choices no longer match the {offer.name} offer, so the normal price applies. Go back to the offer’s add-ons to get it again.</p>}
-          {quote ? <p className="booking-hint">{quote.name} offer price. Anything you add on top is charged at its normal price.</p> : <p className="booking-hint">800 DA per base cut. Only optional add-ons increase the total. Add-on prices and service durations are samples, pending Skee’s setup.</p>}
+          {quote ? <p className="booking-hint">{quote.name} offer price. Anything you add on top is charged at its normal price.</p> : giftOff > 0 ? <p className="booking-hint">Your gift from Skee. Anything beyond it is charged at its normal price.</p> : <p className="booking-hint">800 DA per base cut. Only optional add-ons increase the total. Add-on prices and service durations are samples, pending Skee’s setup.</p>}
           <p className="booking-hint">Nothing is paid online. You pay at the studio.</p>
           {previewDone && <div className="booking-summary-preferences"><span className="lbl">Preferences</span><p>{channel} reminders</p>{preferences.length > 0 && <p>{preferences.join(' · ')}</p>}{notes && <p className="booking-saved-notes">{notes}</p>}</div>}
         </aside>

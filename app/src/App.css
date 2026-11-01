@@ -243,3 +243,9 @@ button.card{text-align:left;width:100%}
 .service-card-photos{position:absolute;right:24px;bottom:76px}
 .mobile-account{display:none}
 @media(max-width:760px){.mobile-account{position:absolute;right:76px;top:18px;display:flex;align-items:center;justify-content:center;width:44px;height:44px;padding:0;border:0;background:none;cursor:pointer}}
+.review-star-empty{opacity:.22}
+.review-reply{margin:0;padding-left:14px;border-left:1px solid #C9A96A66;font-size:14px;line-height:1.6;color:#BDB8B0}
+.review-reply span{display:block;margin-bottom:4px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#C9A96A}
+.review-author{display:inline-flex;align-items:center;gap:10px}
+.review-author img{width:32px;height:32px;border-radius:50%;object-fit:cover;border:1px solid #C9A96A}
+.reviews-empty{grid-column:1/-1;margin:0;padding:32px;border:1px dashed #333;font-size:15px;line-height:1.6;color:#A8A49D}

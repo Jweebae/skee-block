@@ -4,6 +4,7 @@ import { callBookings, dayLabel, algiersParts, STATUS_LABELS, whatsappLink } fro
 import { BASE_CUT_PRICE, formatPrice } from '../booking/catalog'
 import PhoneField from '../lib/PhoneField'
 import { formatDzMobile, normalizeDzMobile } from '../lib/phone'
+import CloseVisit from './CloseVisit'
 
 // Owners answer requests, close visits, move or cancel appointments, and add walk-ins. Every change goes through the
 // bookings Edge Function, which emails the client where needed.
@@ -22,12 +23,15 @@ async function clientPhotos(bookings) {
 
 async function fetchAppointments() {
   const since = new Date(Date.now() - 14 * 86400000).toISOString()
-  const [{ data, error }, place] = await Promise.all([
+  const sinceDay = algiersParts(since).date
+  const [{ data, error }, place, payments, debts] = await Promise.all([
     supabase.from('bookings').select('*').gte('ends_at', since).order('starts_at'),
     supabase.from('studio_private').select('location_url').eq('id', 'main').maybeSingle(),
+    supabase.from('visit_payments').select('*').gte('paid_on', sinceDay),
+    supabase.from('client_debts').select('*').gte('created_on', sinceDay),
   ])
   if (error) return { error: 'Appointments could not be loaded. Check your connection and try again.' }
-  return { bookings: data, locationUrl: place.data?.location_url || '', photos: await clientPhotos(data), now: Date.now() }
+  return { bookings: data, locationUrl: place.data?.location_url || '', photos: await clientPhotos(data), payments: payments.data || [], debts: debts.data || [], now: Date.now() }
 }
 
 function whatsappMessages(booking, locationUrl) {
@@ -42,13 +46,23 @@ function whatsappMessages(booking, locationUrl) {
   return messages
 }
 
-function BookingCard({ booking, locationUrl, onAction, busy, now, photo }) {
+const reviewMessage = booking => [['Ask for a review', `Salam ${booking.client_name.split(' ')[0]}, thank you for coming in. I would love your honest opinion of the cut and the Block: ${window.location.origin}/#review/${booking.review_token} — Skee`]]
+
+function paymentText(payment, debt) {
+  if (!payment) return 'Not recorded yet'
+  if (payment.is_free) return 'Free cut'
+  return `${formatPrice(payment.amount_received)} received${debt ? ` · ${formatPrice(debt.amount)} on debt` : ''}`
+}
+
+function BookingCard({ booking, locationUrl, onAction, busy, now, photo, payment, debt }) {
   const [confirming, setConfirming] = useState('')
   const [moving, setMoving] = useState(false)
+  const [closing, setClosing] = useState(false)
   const [moveTo, setMoveTo] = useState(() => algiersParts(booking.starts_at))
   const started = new Date(booking.starts_at).getTime() <= now
   const { time } = algiersParts(booking.starts_at)
   const live = ['requested', 'confirmed'].includes(booking.status)
+  const dueToday = algiersParts(booking.starts_at).date <= algiersParts(now).date
   const act = (action, extra) => { setConfirming(''); onAction(booking, action, extra) }
   return <section className="admin-editor-card appt-card" data-status={booking.status} aria-label={`${booking.code} ${booking.client_name}`}>
     <div className="appt-head">
@@ -60,10 +74,11 @@ function BookingCard({ booking, locationUrl, onAction, busy, now, photo }) {
       {booking.client_email && <div><dt>Email</dt><dd>{booking.client_email}</dd></div>}
       {booking.preferences?.length > 0 && <div><dt>Preferences</dt><dd>{booking.preferences.join(' · ')}</dd></div>}
       {booking.notes && <div><dt>Notes</dt><dd>{booking.notes}</dd></div>}
-      {booking.offer_name && <div><dt>Offer</dt><dd>{booking.offer_name} · usual {formatPrice(booking.usual_price)}</dd></div>}
+      {booking.offer_name && <div><dt>{booking.gift_id ? 'Gift' : 'Offer'}</dt><dd>{booking.offer_name} · usual {formatPrice(booking.usual_price)}</dd></div>}
+      {booking.status === 'completed' && <div><dt>Payment · private</dt><dd>{paymentText(payment, debt)}{payment?.note ? ` · ${payment.note}` : ''}</dd></div>}
       <div><dt>Reminder by</dt><dd>{booking.reminder_channel === 'whatsapp' ? 'WhatsApp' : 'Email'}</dd></div>
     </dl>
-    {moving ? <div className="appt-move">
+    {closing ? <CloseVisit booking={booking} payment={payment} debt={debt} busy={busy} onCancel={() => setClosing(false)} onSave={values => { setClosing(false); onAction(booking, 'close', values) }} /> : moving ? <div className="appt-move">
       <label>New date<input type="date" value={moveTo.date} onChange={event => setMoveTo(current => ({ ...current, date: event.target.value }))} /></label>
       <label>New time<input type="time" step="900" value={moveTo.time} onChange={event => setMoveTo(current => ({ ...current, time: event.target.value }))} /></label>
       <button type="button" className="admin-outline" onClick={() => setMoving(false)}>Keep the time</button>
@@ -71,13 +86,16 @@ function BookingCard({ booking, locationUrl, onAction, busy, now, photo }) {
     </div> : <div className="admin-card-actions appt-actions">
       {booking.status === 'requested' && <><button type="button" className="admin-save" disabled={busy} onClick={() => act('confirm')}>Accept</button>
         {confirming === 'decline' ? <button type="button" className="admin-outline admin-delete" disabled={busy} onClick={() => act('decline')}>Yes, decline</button> : <button type="button" className="admin-outline" disabled={busy} onClick={() => setConfirming('decline')}>Decline</button>}</>}
-      {booking.status === 'confirmed' && started && <><button type="button" className="admin-save" disabled={busy} onClick={() => act('complete')}>Done</button><button type="button" className="admin-outline" disabled={busy} onClick={() => act('no_show')}>Missed</button></>}
-      {['completed', 'no_show'].includes(booking.status) && <button type="button" className="admin-outline" disabled={busy} onClick={() => act(booking.status === 'completed' ? 'no_show' : 'complete')}>Mark {booking.status === 'completed' ? 'missed' : 'done'} instead</button>}
+      {booking.status === 'confirmed' && <button type="button" className="admin-save" disabled={busy || !dueToday} onClick={() => setClosing(true)}>{dueToday ? 'Cut done' : `Cut done · from ${dayLabel(booking.starts_at, { day: 'numeric', month: 'short' })}`}</button>}
+      {booking.status === 'confirmed' && started && <button type="button" className="admin-outline" disabled={busy} onClick={() => act('no_show')}>Missed</button>}
+      {booking.status === 'completed' && <button type="button" className="admin-save" disabled={busy} onClick={() => setClosing(true)}>{payment ? 'Edit payment' : 'Add payment'}</button>}
+      {booking.status === 'completed' && <button type="button" className="admin-outline" disabled={busy} onClick={() => act('no_show')}>Mark missed instead</button>}
+      {booking.status === 'no_show' && <button type="button" className="admin-outline" disabled={busy} onClick={() => setClosing(true)}>Cut done instead</button>}
       {live && !started && <button type="button" className="admin-outline" disabled={busy} onClick={() => setMoving(true)}>Move</button>}
       {live && (confirming === 'cancel' ? <button type="button" className="admin-outline admin-delete" disabled={busy} onClick={() => act('cancel')}>Yes, cancel it</button> : <button type="button" className="admin-outline admin-delete" disabled={busy} onClick={() => setConfirming('cancel')}>Cancel</button>)}
       {confirming && <button type="button" className="admin-outline" onClick={() => setConfirming('')}>Keep it</button>}
     </div>}
-    {booking.client_phone && live && <div className="appt-whatsapp"><span className="lbl">WhatsApp</span>{whatsappMessages(booking, locationUrl).map(([label, text]) => <a key={label} className="admin-outline" href={whatsappLink(booking.client_phone, text)} target="_blank" rel="noreferrer">{label} ↗</a>)}</div>}
+    {booking.client_phone && (live || booking.status === 'completed') && <div className="appt-whatsapp"><span className="lbl">WhatsApp</span>{(live ? whatsappMessages(booking, locationUrl) : reviewMessage(booking)).map(([label, text]) => <a key={label} className="admin-outline" href={whatsappLink(booking.client_phone, text)} target="_blank" rel="noreferrer">{label} ↗</a>)}</div>}
   </section>
 }
 
@@ -119,7 +137,7 @@ function WalkInForm({ settings, onDone }) {
 }
 
 export default function AppointmentsManager({ settings, headingRef }) {
-  const [data, setData] = useState({ bookings: null, locationUrl: '', photos: {}, now: 0 })
+  const [data, setData] = useState({ bookings: null, locationUrl: '', photos: {}, payments: [], debts: [], now: 0 })
   const [version, setVersion] = useState(0)
   const [busy, setBusy] = useState(false)
   const [walkIn, setWalkIn] = useState(false)
@@ -141,8 +159,10 @@ export default function AppointmentsManager({ settings, headingRef }) {
     setBusy(true); setError(''); setMessage('')
     try {
       if (action === 'move') await callBookings('owner_move', { id: booking.id, ...extra })
+      else if (action === 'close') await callBookings('owner_close', { id: booking.id, ...extra })
       else await callBookings('owner_update', { id: booking.id, move: action })
-      const done = { confirm: 'accepted; the client was emailed', decline: 'declined; the client was emailed', cancel: 'cancelled; the client was emailed', complete: 'marked done', no_show: 'marked missed', move: 'moved; the client was emailed' }[action]
+      const closedText = booking.status === 'completed' ? 'payment saved' : booking.client_email ? 'closed; the client was emailed for a review' : 'closed'
+      const done = { confirm: 'accepted; the client was emailed', decline: 'declined; the client was emailed', cancel: 'cancelled; the client was emailed', close: closedText, no_show: 'marked missed', move: 'moved; the client was emailed' }[action]
       setMessage(`${booking.code} (${booking.client_name}) ${done}.`)
       setVersion(value => value + 1)
     } catch (problem) { setError(problem.message) } finally { setBusy(false) }
@@ -155,17 +175,21 @@ export default function AppointmentsManager({ settings, headingRef }) {
   const upcoming = bookings.filter(item => item.status === 'confirmed' && new Date(item.starts_at).getTime() > now)
   const closed = bookings.filter(item => !['requested', 'confirmed'].includes(item.status) || (item.status === 'requested' && new Date(item.starts_at).getTime() <= now)).reverse()
   const days = [...new Set(upcoming.map(item => algiersParts(item.starts_at).date))]
-  const card = item => <BookingCard key={`${item.id}-${item.updated_at}`} booking={item} locationUrl={data.locationUrl} onAction={onAction} busy={busy} now={now} photo={data.photos?.[item.client_id]} />
+  const card = item => <BookingCard key={`${item.id}-${item.updated_at}`} booking={item} locationUrl={data.locationUrl} onAction={onAction} busy={busy} now={now} photo={data.photos?.[item.client_id]} payment={data.payments.find(row => row.booking_id === item.id)} debt={data.debts.find(row => row.booking_id === item.id)} />
+  const today = algiersParts(now).date
+  const onChair = bookings.filter(item => algiersParts(item.starts_at).date === today && ['confirmed', 'completed'].includes(item.status))
+  const received = data.payments.filter(row => row.paid_on === today).reduce((sum, row) => sum + row.amount_received, 0)
 
   return <>
-    <div className="admin-title-row"><div><span className="lbl">Skee Block · Studio controls</span><h1 className="serif" ref={headingRef} tabIndex={-1}>Appointments</h1><p>Answer requests, close today’s visits, move or cancel appointments and add walk-ins. Clients get an email for every answer, move and cancellation. The list refreshes every 30 seconds.</p></div><button type="button" className="admin-save" onClick={() => setWalkIn(open => !open)}>{walkIn ? 'Close walk-in' : '+ Walk-in booking'}</button></div>
+    <div className="admin-title-row"><div><span className="lbl">Skee Block · Studio controls</span><h1 className="serif" ref={headingRef} tabIndex={-1}>Appointments</h1><p>Answer requests, close each cut when it is done, move or cancel appointments and add walk-ins. Clients get an email for every answer, move and cancellation, and a review request when you close the cut. The list refreshes every 30 seconds.</p></div><button type="button" className="admin-save" onClick={() => setWalkIn(open => !open)}>{walkIn ? 'Close walk-in' : '+ Walk-in booking'}</button></div>
     {walkIn && <WalkInForm settings={settings} onDone={text => { setWalkIn(false); setMessage(text); setVersion(value => value + 1) }} />}
     {error && <p className="admin-error" role="alert">{error}</p>}{message && <p className="admin-message" role="status">{message}</p>}
     {!data.locationUrl && data.bookings && <p className="admin-empty">Add the studio’s private map link in Studio details so confirmations and reminders can share it.</p>}
     {data.bookings === null ? <p className="admin-empty">Loading appointments…</p> : <>
+      <dl className="book-stats" aria-label="Today"><div><dt>Today’s chair</dt><dd>{onChair.length} {onChair.length === 1 ? 'visit' : 'visits'}</dd></div><div><dt>Expected today</dt><dd>{formatPrice(onChair.reduce((sum, item) => sum + item.total_price, 0))}</dd></div><div><dt>Received today</dt><dd>{formatPrice(received)}</dd></div><div><dt>To close</dt><dd>{toClose.length}</dd></div></dl>
       <h2 className="appt-group">Requests waiting · {requests.length}</h2>
       {requests.length ? <div className="admin-editor-list">{requests.map(card)}</div> : <p className="admin-empty">No requests waiting.</p>}
-      {toClose.length > 0 && <><h2 className="appt-group">To close · {toClose.length}</h2><p className="appt-hint">These visits have started. Mark each one done or missed.</p><div className="admin-editor-list">{toClose.map(card)}</div></>}
+      {toClose.length > 0 && <><h2 className="appt-group">To close · {toClose.length}</h2><p className="appt-hint">These visits have started. Press Cut done when the client leaves, or Missed if they never came.</p><div className="admin-editor-list">{toClose.map(card)}</div></>}
       <h2 className="appt-group">Upcoming · {upcoming.length}</h2>
       {days.length ? days.map(day => <div key={day} className="appt-day"><h3 className="lbl">{dayLabel(`${day}T12:00:00Z`)}</h3><div className="admin-editor-list">{upcoming.filter(item => algiersParts(item.starts_at).date === day).map(card)}</div></div>) : <p className="admin-empty">No confirmed appointments ahead.</p>}
       {closed.length > 0 && <details className="appt-closed"><summary>Last 14 days · {closed.length}</summary><div className="admin-editor-list">{closed.map(card)}</div></details>}

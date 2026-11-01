@@ -149,9 +149,24 @@ const TEMPLATES = [
     body: label('Owner · cancellation') + heading('A client cancelled.') + details([['Booking', '{{code}}'], ['Client', '{{client_name}}'], ['WhatsApp', '{{phone}}'], ['Service', '{{service}}'], ['Date', '{{date}}'], ['Time', '{{time}}']]) + para('The slot is free again on the website.') + button('Open the admin page', '{{admin_url}}'),
   },
   {
-    file: 'review-request.html', group: 'app', where: 'The day after a visit', subject: 'How was your cut?',
-    preheader: 'Two minutes to tell us about your visit.',
-    body: label('After your visit') + heading('How was your cut?') + para('Thank you for coming in, {{first_name}}. Your review helps other clients choose their chair. Reviews appear on the website only after they are approved.') + button('Leave a review', '{{review_url}}'),
+    file: 'review-request.html', group: 'app', where: 'As soon as the barber confirms the cut is done', subject: 'Your cut is done. How was it?',
+    preheader: 'Skee would like your honest impression.',
+    body: label('All done') + heading('How was your cut?') + para('{{first_name}}, your {{service}} is done. Thank you for coming in.') + para('Skee would like your honest impression: the cut, the welcome and your whole experience at 3kee. Good or bad, he reads every word.') + button('Leave a review', '{{review_url}}') + small('It takes two minutes and you don’t need to sign in. Reviews appear on the website only after they are approved.'),
+  },
+  {
+    file: 'client-gift.html', group: 'app', where: 'When an owner sends a gift or special offer to one client', subject: 'A gift from Skee: {{gift_title}}',
+    preheader: '{{gift_value}}, just for you.',
+    body: label('Just for you') + heading('A gift from Skee.') + para('{{first_name}}, Skee has set something aside for you.') + details([['Gift', '{{gift_title}}'], ['Worth', '{{gift_value}}'], ['Valid until', '{{gift_until}}']]) + para('{{gift_message}}') + button('Use my gift', '{{account_url}}') + small('Open your account, choose the gift, and it is applied to your booking.'),
+  },
+  {
+    file: 'debt-reminder.html', group: 'app', where: 'When an owner presses Remind on a client’s debt', subject: 'A small note from 3kee',
+    preheader: 'A small balance from your last visit.',
+    body: label('A small note') + heading('Salam {{first_name}}.') + para('A quick note from Skee: <strong style="color:#F2EFE9">{{amount}}</strong> is still open from your visit.') + para('You can settle it at your next visit. Thank you, and see you in the chair.') + small('Already settled it? Reply to this email and we will sort it out.'),
+  },
+  {
+    file: 'owner-new-review.html', group: 'app', where: 'To every owner when a client sends a review', subject: 'New review to read: {{rating}} from {{client_name}}',
+    preheader: 'Read it, then post it live or reject it.',
+    body: label('Owner · new review') + heading('A new review.') + details([['Client', '{{client_name}}'], ['Service', '{{service}}'], ['Rating', '{{rating}}']]) + para('{{review_text}}') + button('Read it in the admin page', '{{admin_url}}') + small('Nothing appears on the website until an owner posts it live.'),
   },
 ]
 

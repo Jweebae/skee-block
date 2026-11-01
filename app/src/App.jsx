@@ -21,6 +21,12 @@ import HeaderAvatar from './auth/HeaderAvatar'
 import PrivacyNotice from './legal/PrivacyNotice'
 import { CutHoverPhotos, CutPhotosButton } from './booking/CutPhotos'
 import OffersStrip from './offers/OffersStrip'
+import useReviews from './reviews/useReviews'
+import ReviewCards from './reviews/ReviewCards'
+import ReviewPage from './reviews/ReviewPage'
+import AllReviews from './reviews/AllReviews'
+
+const reviewTokenIn = hash => hash.match(/^#review\/([0-9a-f-]{36})$/)?.[1] || ''
 
 
 function ChatIcon() {
@@ -36,6 +42,9 @@ export default function App() {
   const [isAdmin, setIsAdmin] = useState(() => window.location.hash === '#admin')
   const [isPrivacy, setIsPrivacy] = useState(() => window.location.hash === '#privacy')
   const [isAccount, setIsAccount] = useState(() => window.location.hash === '#account')
+  const [reviewToken, setReviewToken] = useState(() => reviewTokenIn(window.location.hash))
+  const [isAllReviews, setIsAllReviews] = useState(() => window.location.hash === '#all-reviews')
+  const homeReviews = useReviews(3)
   const visibleServices = settings.services.filter(item => item.visible)
   const openDays = settings.hours.filter(item => item.open)
   const hoursSummary = openDays.length === 0 ? 'Closed this week' : openDays.length === 6 && !settings.hours[5].open && openDays.every(item => item.start === openDays[0].start && item.end === openDays[0].end) ? `Sat–Thu · ${openDays[0].start}–${openDays[0].end}` : `${openDays.length} open days · See weekly hours`
@@ -54,7 +63,7 @@ export default function App() {
   useEffect(() => {
     const navigate = () => {
       const hash = window.location.hash
-      setBookingRequest(null); setMenuOpen(false); setIsAdmin(hash === '#admin'); setIsPrivacy(hash === '#privacy'); setIsAccount(hash === '#account')
+      setBookingRequest(null); setMenuOpen(false); setIsAdmin(hash === '#admin'); setIsPrivacy(hash === '#privacy'); setIsAccount(hash === '#account'); setReviewToken(reviewTokenIn(hash)); setIsAllReviews(hash === '#all-reviews')
       if (hash === '#account' && dialogRef.current?.open) dialogRef.current.close()
     }
     window.addEventListener('hashchange', navigate)
@@ -67,12 +76,13 @@ export default function App() {
     return () => cancelAnimationFrame(frame)
   }, [isAdmin])
 
+  const fullPage = isAccount || Boolean(reviewToken) || isAllReviews
   useEffect(() => {
-    if (!isAccount || isAdmin) return
+    if (!fullPage || isAdmin) return
     const previousOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     return () => { document.body.style.overflow = previousOverflow }
-  }, [isAccount, isAdmin])
+  }, [fullPage, isAdmin])
 
   useEffect(() => {
     if (!bookingRequest || isAdmin) return
@@ -502,104 +512,15 @@ export default function App() {
           </div>
         </div>
         <div className="reviews-grid card-grid">
-          <figure className="card reveal review-card">
-            <div aria-label="5 out of 5" className="review-stars">
-              <span>
-                ★
-              </span>
-              <span>
-                ★
-              </span>
-              <span>
-                ★
-              </span>
-              <span>
-                ★
-              </span>
-              <span>
-                ★
-              </span>
-            </div>
-            <blockquote className="serif review-quote">
-              “[Approved client review — appears here only after it is approved.]”
-            </blockquote>
-            <figcaption className="card-bottomline">
-              <span className="text-caption">
-                [Client first name, initial]
-              </span>
-              <span className="lbl">
-                Skin Fade · verified
-              </span>
-            </figcaption>
-          </figure>
-          <figure className="card reveal review-card">
-            <div aria-label="5 out of 5" className="review-stars">
-              <span>
-                ★
-              </span>
-              <span>
-                ★
-              </span>
-              <span>
-                ★
-              </span>
-              <span>
-                ★
-              </span>
-              <span>
-                ★
-              </span>
-            </div>
-            <blockquote className="serif review-quote">
-              “[Approved client review.]”
-            </blockquote>
-            <figcaption className="card-bottomline">
-              <span className="text-caption">
-                [Client first name, initial]
-              </span>
-              <span className="lbl">
-                Block Ritual · verified
-              </span>
-            </figcaption>
-          </figure>
-          <figure className="card reveal review-card">
-            <div aria-label="5 out of 5" className="review-stars">
-              <span>
-                ★
-              </span>
-              <span>
-                ★
-              </span>
-              <span>
-                ★
-              </span>
-              <span>
-                ★
-              </span>
-              <span>
-                ★
-              </span>
-            </div>
-            <blockquote className="serif review-quote">
-              “[Approved client review.]”
-            </blockquote>
-            <figcaption className="card-bottomline">
-              <span className="text-caption">
-                [Client first name, initial]
-              </span>
-              <span className="lbl">
-                Beard Sculpt · verified
-              </span>
-            </figcaption>
-          </figure>
+          {homeReviews.reviews?.length ? <ReviewCards reviews={homeReviews.reviews} /> : homeReviews.reviews && <p className="reviews-empty">The first reviews will appear here once Skee has read and approved them.</p>}
         </div>
         <div className="reveal review-followup">
           <span className="muted-small">
-            Been in the chair? Your review link arrives on WhatsApp two hours after your appointment.
+            {homeReviews.total > 3 ? `${homeReviews.average.toFixed(1)} out of 5 from ${homeReviews.total} verified clients.` : 'Been in the chair? Your review link arrives by email as soon as Skee closes your visit.'}
           </span>
-          <button className="btn btn-ghost button-outline" data-action="account" type="button">
+          {homeReviews.total > 3 ? <a className="btn btn-ghost button-outline" href="#all-reviews">Read all {homeReviews.total} reviews</a> : <button className="btn btn-ghost button-outline" data-action="account" type="button">
             Leave a review
-          </button>
+          </button>}
         </div>
       </section>
       <section className="contact-band contact-surface">
@@ -756,9 +677,11 @@ export default function App() {
 
       </button>
     <div className="mobile-booking-bar"><button className="mobile-book" data-action="booking">Book the chair <span aria-hidden="true">→</span></button><button className="mobile-chat" data-action="whatsapp" aria-label="WhatsApp Skee"><ChatIcon /></button></div>
-      {isAccount && <AccountPage client={client} settings={settings} onClose={() => { window.location.hash = 'top' }} onBook={serviceId => setBookingRequest({ serviceId })} onSignIn={openAccount} />}
+      {isAccount && <AccountPage client={client} settings={settings} onClose={() => { window.location.hash = 'top' }} onBook={(serviceId, giftId) => setBookingRequest({ serviceId, giftId })} onSignIn={openAccount} />}
+      {reviewToken && <ReviewPage key={reviewToken} token={reviewToken} signedIn={Boolean(client.user && client.profileComplete)} />}
+      {isAllReviews && <AllReviews />}
       <dialog ref={bookingDialogRef} className="booking-dialog" aria-labelledby="booking-title" onClose={() => setBookingRequest(null)}>
-        {bookingRequest && <BookingFlow settings={settings} initialServiceId={bookingRequest.serviceId} initialAddons={bookingRequest.addons} initialStep={bookingRequest.step ?? 0} initialOfferId={bookingRequest.offerId} client={client} profileStatus={profileStatus} onSignIn={openAccount} onOpenAccount={() => { bookingDialogRef.current.close(); window.location.hash = 'account' }} onClose={() => bookingDialogRef.current.close()} />}
+        {bookingRequest && <BookingFlow settings={settings} initialServiceId={bookingRequest.serviceId} initialAddons={bookingRequest.addons} initialStep={bookingRequest.step ?? 0} initialOfferId={bookingRequest.offerId} initialGiftId={bookingRequest.giftId} client={client} profileStatus={profileStatus} onSignIn={openAccount} onOpenAccount={() => { bookingDialogRef.current.close(); window.location.hash = 'account' }} onClose={() => bookingDialogRef.current.close()} />}
       </dialog>
       <dialog ref={dialogRef} aria-labelledby="dialog-title" className="action-dialog" onClick={event => { if (event.target === event.currentTarget) dialogRef.current.close() }}>
         <button className="dialog-close" aria-label="Close" onClick={() => dialogRef.current.close()}>×</button>
