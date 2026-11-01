@@ -148,7 +148,7 @@ function History({ bookings, reviews, now, onChanged, onBook }) {
         return <li key={item.id}>
           <span className="acct-when">{dayLabel(item.starts_at, { day: '2-digit', month: 'short', year: 'numeric' })}<small>{algiersParts(item.starts_at).time}</small></span>
           <span className="acct-what"><span className="serif">{item.service_name}</span><small>{statusLine(item)}{extrasText(item) ? ` · + ${extrasText(item)}` : ''}{review ? ` · ${REVIEW_STATES[review.status]}` : ''}</small></span>
-          <span className="acct-price">{item.on_the_house ? 'On the house' : formatPrice(item.total_price)}</span>
+          <span className="acct-price">{formatPrice(item.total_price)}</span>
           <span className="acct-row-actions">
             {item.status === 'completed' && !review && !item.client_hidden && <a className="acct-btn acct-btn-gold" href={`#review/${item.review_token}`}>Leave a review</a>}
             {item.status === 'completed' && !item.client_hidden && <button type="button" className="acct-btn" onClick={() => onBook(item.service_id)}>Book again</button>}

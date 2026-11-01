@@ -430,7 +430,7 @@ async function ownerUpdate(db: SupabaseClient, body: any) {
   if (!move.from.includes(booking.status)) fail(409, 'wrong_status')
   if (move.afterStart && new Date(booking.starts_at).getTime() > Date.now()) fail(409, 'not_started')
   if (move.to === 'no_show') await clearPayment(db, booking.id)
-  const updated = await updateBooking(db, booking.id, { status: move.to, cancelled_by: move.to === 'cancelled' ? 'studio' : booking.cancelled_by, on_the_house: move.to === 'no_show' ? false : booking.on_the_house })
+  const updated = await updateBooking(db, booking.id, { status: move.to, cancelled_by: move.to === 'cancelled' ? 'studio' : booking.cancelled_by })
   if (['declined', 'cancelled'].includes(move.to)) await releaseGift(db, booking)
   if (move.to === 'confirmed') await notifyClient(db, updated, 'booking-confirmed', 'confirmed')
   if (move.to === 'declined') await notifyClient(db, updated, 'booking-declined', 'declined')
@@ -507,7 +507,6 @@ async function savePayment(db: SupabaseClient, booking: any, body: any) {
     const { error: problem } = await db.from('client_debts').upsert(row, { onConflict: 'booking_id' })
     if (problem) { console.error('debt failed', problem); fail(500, 'save_failed') }
   } else if (debt) await db.from('client_debts').delete().eq('id', debt.id)
-  return free
 }
 
 async function clearPayment(db: SupabaseClient, bookingId: string) {
@@ -517,13 +516,14 @@ async function clearPayment(db: SupabaseClient, bookingId: string) {
   await db.from('visit_payments').delete().eq('booking_id', bookingId)
 }
 
-// Also corrects a visit already closed, in which case the client hears nothing new.
+// The amount is saved first, so the review email only goes out for a visit whose payment is recorded. Nothing the owner
+// types here reaches the client, not even that the cut was free. A re-save corrects a closed visit and sends nothing.
 async function ownerClose(db: SupabaseClient, body: any) {
   const booking = await getBooking(db, body.id)
   if (!['confirmed', 'no_show', 'completed'].includes(booking.status)) fail(409, 'wrong_status')
   if (algiersParts(new Date(booking.starts_at)).date > algiersParts(new Date()).date) fail(409, 'not_today')
-  const free = await savePayment(db, booking, body)
-  const updated = await updateBooking(db, booking.id, { status: 'completed', on_the_house: free })
+  await savePayment(db, booking, body)
+  const updated = await updateBooking(db, booking.id, { status: 'completed' })
   if (booking.status !== 'completed') await notifyClient(db, updated, 'review-request', 'review_request')
   return { booking: publicBooking(updated) }
 }
