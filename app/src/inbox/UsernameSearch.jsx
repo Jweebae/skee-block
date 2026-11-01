@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 // Suggestions update with every letter. A pasted username works too: the server only reads the letters a username can
 // contain, so a stray space or @ does not matter. Enter picks the highlighted suggestion.
 const tidy = value => value.trim().replace(/^@/, '')
+const letters = value => value.toLowerCase().replace(/[^a-z0-9._]/g, '')
 
 export default function UsernameSearch({ search, onPick }) {
   const [query, setQuery] = useState('')
@@ -19,7 +20,8 @@ export default function UsernameSearch({ search, onPick }) {
     }, 120)
     return () => { current = false; clearTimeout(timer) }
   }, [wanted, search])
-  const results = wanted ? answer.results : []
+  // While the next answer is on its way, an older suggestion that no longer fits must not stay on screen: Enter would pick it.
+  const results = wanted ? answer.results.filter(item => item.username.includes(letters(wanted))) : []
   const answered = wanted && answer.wanted === wanted
   function pick(item) {
     setQuery('')
