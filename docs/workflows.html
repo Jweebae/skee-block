@@ -145,6 +145,7 @@ a:focus-visible { outline: 1px solid var(--gilt); outline-offset: 3px }
       <a href="#clients">Clients <i class="dot live"></i></a>
       <a href="#money">Money and debts <i class="dot live"></i></a>
       <a href="#gifts">Gifts to one client <i class="dot live"></i></a>
+      <a href="#inbox">Inbox <i class="dot live"></i></a>
       <a href="#moderation">Review moderation <i class="dot live"></i></a>
       <a href="#whatsapp">WhatsApp messages <i class="dot planned"></i></a>
       <a href="#studio-details">Private location <i class="dot planned"></i></a>
@@ -248,7 +249,7 @@ a:focus-visible { outline: 1px solid var(--gilt); outline-offset: 3px }
         <ol class="steps">
           <li><strong>Service</strong><ul class="sub"><li>Choose one cut. Each card shows its duration; every base cut is 800 DA.</li><li>Changing the cut clears the chosen date, time and cut preferences.</li></ul></li>
           <li><strong>Add-ons (optional)</strong><ul class="sub"><li>Tick an add-on (for example a protein hair treatment), then choose exactly one of its types.</li><li>Each type adds its own price and minutes. Only add-ons raise the total.</li><li>Continue is blocked until every ticked add-on has a type, or is unticked.</li></ul></li>
-          <li><strong>Date &amp; time</strong><ul class="sub"><li>Dates for the next two weeks; closed days and days where the full service cannot fit are greyed out.</li><li>Times are grouped Morning and Afternoon, follow the saved working hours and breaks, and are in M’Sila time (UTC+1).</li></ul></li>
+          <li><strong>Date &amp; time</strong><ul class="sub"><li>Dates from today through the next two weeks, with at least one hour’s notice; closed days and days where the full service cannot fit are greyed out.</li><li>Times are grouped Morning and Afternoon, follow the saved working hours and breaks, and are in M’Sila time (UTC+1).</li></ul></li>
           <li><strong>Review</strong><ul class="sub"><li>Summary of cut, add-ons, date, time, total minutes and total price, with “Change date &amp; time”.</li><li>Optional cut preferences (from the owner’s list, no extra fee) and notes for Skee (up to 1,000 characters).</li><li>Preferred reminder channel: WhatsApp or Email.</li><li>The studio location stays hidden until a real appointment is confirmed.</li></ul></li>
           <li><strong>Send the request</strong><ul class="sub"><li><b>Today (preview):</b> a “Preview complete” screen says no appointment was made and links to WhatsApp to arrange the visit.</li><li><b>Planned:</b> the client signs in or creates an account if needed and gives a WhatsApp number (saved for next time). The request is saved as <b>Requested</b> with a code such as <b>SKB-4827</b>, the slot is held so nobody else can take it, the client gets “We received your request”, and every owner gets an alert.</li><li>Times already held by other requests or appointments no longer appear in step 3. Bookings need at least one hour’s notice.</li><li>A client can hold at most two upcoming requests or appointments at once.</li><li>The client is told replies usually come within 10 minutes.</li></ul></li>
         </ol>
@@ -314,7 +315,7 @@ a:focus-visible { outline: 1px solid var(--gilt); outline-offset: 3px }
       <article class="flow" id="after">
         <div class="flow-head"><div><h3>After the visit and reviews</h3><div class="meta"><span><b>Who:</b> owner, then the client</span><span><b>When:</b> as soon as the owner confirms the cut is done</span></div></div><span class="chip live">Live</span></div>
         <ol class="steps">
-          <li><strong>Owner closes the visit</strong><ul class="sub"><li>On a confirmed appointment, from its day onward, press <b>Cut done</b>.</li><li>Choose <b>Paid in full</b>, <b>Paid another amount</b> (money received, and what is still owed as a debt) or <b>Free cut</b>. A private note is optional.</li><li>The payment can be corrected later, and a visit can be marked <b>Missed</b> instead.</li></ul></li>
+          <li><strong>Owner closes the visit</strong><ul class="sub"><li>On a confirmed appointment, press <b>Cut done</b> at any time, even ahead of the appointment. The money counts on the day of the visit, or today if it is closed early.</li><li>Choose <b>Paid in full</b>, <b>Paid another amount</b> (money received, and what is still owed as a debt) or <b>Free cut</b>. A private note is optional.</li><li>The payment can be corrected later, a visit can be marked <b>Missed</b> instead once it has started, and <b>Undo</b> reopens a closed visit and removes its payment, unless part of its debt was repaid or the time was taken meanwhile.</li></ul></li>
           <li><strong>Review request</strong><ul class="sub"><li>At once, the client gets “Your cut is done. How was it?” with a personal link. Skipped when the owner’s client emails switch or the client’s own email switch is off, or when there is no email address. For those clients the card has a WhatsApp “Ask for a review” link.</li></ul></li>
           <li><strong>Client writes a review</strong><ul class="sub"><li>Stars and a short text, for that visit only. The link needs no sign-in. The client chooses whether to show their profile photo; it is hidden by default.</li></ul></li>
           <li><strong>Owner moderates</strong><ul class="sub"><li>The owner gets an email, reads the review, then posts it live or rejects it. Only reviews posted live appear on the website.</li></ul></li>
@@ -391,6 +392,17 @@ a:focus-visible { outline: 1px solid var(--gilt); outline-offset: 3px }
           <li><strong>One booking only</strong><ul class="sub"><li>If that booking is cancelled or declined, the gift comes back. An owner can cancel a gift that is still waiting.</li></ul></li>
         </ol>
         <div class="aside-grid"><div class="box mail"><span class="lbl">Emails</span><div class="mail-list"><span class="mail-pill">A gift from Skee</span></div></div></div>
+      </article>
+
+      <article class="flow" id="inbox">
+        <div class="flow-head"><div><h3>Inbox</h3><div class="meta"><span><b>Who:</b> clients and owners</span><span><b>Starts from:</b> Inbox in the site header or My account; admin → Inbox; Message on a line in Clients</span></div></div><span class="chip live">Live</span></div>
+        <ol class="steps">
+          <li><strong>Client to client</strong><ul class="sub"><li>Search a username (at least three letters) and write. Clients see usernames only, never an email, number or photo. A username created automatically contains the client’s name, and they can change it in My account.</li><li>Not findable: owners’ accounts, yourself, clients who switched messages off, and clients who blocked you.</li></ul></li>
+          <li><strong>Client and Skee</strong><ul class="sub"><li>Every client has a Skee conversation at the top of their inbox.</li><li>Owners write as Skee, by username or from Message on a client’s line, and can reach a client who switched off messages from other clients. Walk-ins without an account get WhatsApp instead.</li></ul></li>
+          <li><strong>Privacy and safety</strong><ul class="sub"><li>Browsers have no access to the message tables; the <code>inbox</code> function checks the caller belongs to each conversation.</li><li><b>Block</b>: a blocked client cannot write or find you, and sees the same message as if you had switched off.</li><li><b>Report</b>: warns that Skee will be able to read the conversation, then opens it to owners, who can read it but not write in it, and close the report.</li><li><b>Delete</b>: removes it from your side only; a new message brings it back.</li><li>Limits: 30 messages in 10 minutes, 10 new conversations a day.</li></ul></li>
+          <li><strong>Notifications</strong><ul class="sub"><li>A count in the site header, My account and the admin menu.</li><li>One email per unread stretch, never with the message text, and only if the email switches are on.</li></ul></li>
+        </ol>
+        <div class="aside-grid"><div class="box mail"><span class="lbl">Emails</span><div class="mail-list"><span class="mail-pill">New message on 3kee</span><span class="mail-pill">A conversation was reported</span></div></div></div>
       </article>
 
       <article class="flow" id="moderation">
@@ -494,6 +506,8 @@ a:focus-visible { outline: 1px solid var(--gilt); outline-offset: 3px }
             <tr><td>Your cut is done. How was it?</td><td>When the owner confirms the cut is done</td><td>Website</td><td>Personal review link</td><td><span class="chip live">Live</span></td></tr>
             <tr><td>A gift from Skee</td><td>An owner sends a gift to one client</td><td>Website</td><td>Gift, value, end date, message</td><td><span class="chip live">Live</span></td></tr>
             <tr><td>A small note from 3kee</td><td>An owner presses Remind on a debt</td><td>Website</td><td>Amount still open</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td>New message on 3kee</td><td>First unread message in a conversation</td><td>Website</td><td>Who wrote, never the text</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td>A conversation was reported</td><td>A client reports a conversation (to owners)</td><td>Website</td><td>Link to the admin page</td><td><span class="chip live">Live</span></td></tr>
             <tr><td>New review to read</td><td>A client sends a review (to owners)</td><td>Website</td><td>Client, rating, text</td><td><span class="chip live">Live</span></td></tr>
             <tr class="section"><td colspan="5">Suggested additions · need your approval</td></tr>
             <tr><td>We couldn’t take this time</td><td>Owner declines a request</td><td>Website</td><td>Requested time, Book another time</td><td><span class="chip proposed">Proposed</span></td></tr>

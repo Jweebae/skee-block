@@ -207,13 +207,13 @@ function UsernameBox({ current, onSaved }) {
   }
   if (!editing) return <p>Username: <strong>{current || 'not set yet'}</strong> <button type="button" className="acct-link" onClick={() => { setValue(current || ''); setEditing(true) }}>{current ? 'Change' : 'Choose one'}</button></p>
   return <form className="acct-username" onSubmit={save}>
-    <label className="acct-field" htmlFor="acct-username">Username<input id="acct-username" className="acct-text" autoCapitalize="none" autoCorrect="off" spellCheck={false} maxLength={30} pattern={USERNAME_PATTERN} required value={value} onChange={event => setValue(event.target.value)} /><small className="acct-muted">3 to 30 letters, numbers, dots or underscores. You can sign in with it instead of your email.</small></label>
+    <label className="acct-field" htmlFor="acct-username">Username<input id="acct-username" className="acct-text" autoCapitalize="none" autoCorrect="off" spellCheck={false} maxLength={30} pattern={USERNAME_PATTERN} required value={value} onChange={event => setValue(event.target.value)} /><small className="acct-muted">3 to 30 letters, numbers, dots or underscores. You can sign in with it instead of your email, and other clients can find you by it in the inbox.</small></label>
     <div className="acct-actions"><button type="button" className="acct-btn" onClick={() => setEditing(false)}>Keep it</button><button type="submit" className="acct-btn acct-btn-primary" disabled={saving}>{saving ? 'Saving…' : 'Save username'}</button></div>
     {error && <p className="acct-error" role="alert">{error}</p>}
   </form>
 }
 
-export default function AccountPage({ client, settings, onClose, onBook, onSignIn }) {
+export default function AccountPage({ client, settings, onClose, onBook, onSignIn, inboxUnread = 0 }) {
   const [state, setState] = useState({ bookings: null, profile: null, reviews: [], gifts: [], now: 0, error: '' })
   const [version, setVersion] = useState(0)
   const [message, setMessage] = useState('')
@@ -239,7 +239,7 @@ export default function AccountPage({ client, settings, onClose, onBook, onSignI
 
   return <div className="acct-page">
     <header className="acct-header"><a href="#top" className="acct-brand" onClick={event => { event.preventDefault(); onClose() }}><img src={logo} alt="SKEE" /><span>My account</span></a>
-      <div className="acct-header-actions">{client.user && <HeaderAvatar user={client.user} status={profileStatus} size={40} />}<button type="button" className="acct-btn acct-btn-primary" onClick={() => onBook(usual?.service_id || null)}>{completed.length ? 'Book again' : 'Book the chair'}</button><button type="button" className="acct-btn" onClick={onClose}>Home</button></div></header>
+      <div className="acct-header-actions">{client.user && <HeaderAvatar user={client.user} status={profileStatus} size={40} />}{client.profileComplete && <a className="acct-btn" href="#inbox">Inbox{inboxUnread > 0 ? ` · ${inboxUnread}` : ''}</a>}<button type="button" className="acct-btn acct-btn-primary" onClick={() => onBook(usual?.service_id || null)}>{completed.length ? 'Book again' : 'Book the chair'}</button><button type="button" className="acct-btn" onClick={onClose}>Home</button></div></header>
     <main className="acct-main">
       {!client.ready ? <p className="acct-muted">Checking your sign-in…</p> : !client.user || !client.profileComplete ? <section className="acct-signed-out"><h1 className="serif">Your place at the <em>Block</em>.</h1><p>Sign in to see your appointments and history.</p><button type="button" className="acct-btn acct-btn-primary" onClick={onSignIn}>Sign in</button></section> : <>
         <div className="acct-hello">

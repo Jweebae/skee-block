@@ -62,7 +62,7 @@ The approved visual identity source is:
 ## Emails
 
 - Client emails are written in `emails/build.mjs` and generated into `emails/html/` with `node emails/build.mjs`; never hand-edit the generated files. In emails the brand name is **3kee** only. The email logo is `app/public/email/3kee-logo.png` on the live site.
-- Edge Functions (deploy with the Supabase MCP, verify_jwt false, each checks callers itself): `send-email` (welcome), `bookings` (every booking change and its emails/WhatsApp messages), `whatsapp` (Meta webhook, number verification, owner connection), `account` (usernames, username sign-in). After editing one, redeploy it and keep the repository copy identical to the deployed one.
+- Edge Functions (deploy with the Supabase MCP, verify_jwt false, each checks callers itself): `send-email` (welcome), `bookings` (every booking change and its emails/WhatsApp messages), `whatsapp` (Meta webhook, number verification, owner connection), `account` (usernames, username sign-in), `inbox` (messages between clients and with the studio). After editing one, redeploy it and keep the repository copy identical to the deployed one.
 - Website emails are sent through Resend by the Supabase Edge Function `supabase/functions/send-email`, which fetches the templates from `https://3kee.site/email/templates/`. The Resend key lives only in the Supabase secret `RESEND_API_KEY`. The function must only ever email the signed-in user's own address; never let the browser choose a recipient. Redeploy it through the Supabase MCP (`verify_jwt` false) after editing.
 
 ## Git and GitHub
@@ -80,6 +80,7 @@ The approved visual identity source is:
 - Owners are listed in `public.studio_admins`. Owners add and remove owners themselves in the admin page section "Owners" (functions from migration `studio_owner_management`). Agents do not add owners unless asked; never create real accounts or invent owner emails.
 - Never store a password or owner credentials anywhere (notes, memory, scripts, commits), even if the user pastes them in chat and offers; do not record the owner's email in tracked files either, because the repository is public. Add owners by looking the account up by email in SQL instead.
 - Clients can read every column of their own `bookings` rows, so what a client paid or owes, including that a cut was free, must never go on `bookings` or into any client email. Payments, debts, the money book and owner notes live in owner-only tables (`visit_payments`, `client_debts`, `money_entries`, `client_cards`).
+- The inbox tables (`inbox_threads`, `inbox_messages`, `inbox_blocks`) have row level security on with no policies and no browser grants on purpose: all access goes through the `inbox` function. Clients must only ever see each other's usernames (a username created automatically contains the client's name, so never promise that names stay hidden), and owners must not be able to read a client-to-client conversation unless one of the two reported it.
 - Destructive SQL is declined by the tool permissions in non-interactive runs. Do not retry it verbatim; neutralise what you created (for example ban test users) and give the user the exact statement to run.
 
 ## Safety

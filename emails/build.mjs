@@ -164,6 +164,11 @@ const TEMPLATES = [
     body: label('A small note') + heading('Salam {{first_name}}.') + para('A quick note from Skee: <strong style="color:#F2EFE9">{{amount}}</strong> is still open from your visit.') + para('You can settle it at your next visit. Thank you, and see you in the chair.') + small('Already settled it? Reply to this email and we will sort it out.'),
   },
   {
+    file: 'new-message.html', group: 'app', where: 'When someone sends a message in the 3kee inbox (the text is never included)', subject: '{{subject_line}}',
+    preheader: 'Open your inbox to read it.',
+    body: label('Inbox') + heading('{{headline}}') + para('{{first_name}}, {{line}}') + button('Open the inbox', '{{inbox_url}}') + small('For your privacy, messages are only shown inside your account. You can turn off these emails in your account.'),
+  },
+  {
     file: 'owner-new-review.html', group: 'app', where: 'To every owner when a client sends a review', subject: 'New review to read: {{rating}} from {{client_name}}',
     preheader: 'Read it, then post it live or reject it.',
     body: label('Owner · new review') + heading('A new review.') + details([['Client', '{{client_name}}'], ['Service', '{{service}}'], ['Rating', '{{rating}}']]) + para('{{review_text}}') + button('Read it in the admin page', '{{admin_url}}') + small('Nothing appears on the website until an owner posts it live.'),

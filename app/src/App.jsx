@@ -10,7 +10,7 @@ import BookingFlow from './booking/BookingFlow'
 import { clearPendingBooking, hasPendingBooking } from './booking/bookingDraft'
 import { BASE_CUT_PRICE } from './booking/catalog'
 import useStudioSettings from './settings/useStudioSettings'
-import { nextOpening } from './settings/studioSettings'
+import { dayBreaks, hoursText, isAllDay, nextOpening } from './settings/studioSettings'
 import { STUDIO_PHONE, STUDIO_AREA, WHATSAPP_URL } from './settings/studioContact'
 import AdminGate from './admin/AdminGate'
 import useClientSession from './auth/useClientSession'
@@ -25,6 +25,8 @@ import useReviews from './reviews/useReviews'
 import ReviewCards from './reviews/ReviewCards'
 import ReviewPage from './reviews/ReviewPage'
 import AllReviews from './reviews/AllReviews'
+import InboxPage from './inbox/InboxPage'
+import useInboxUnread from './inbox/useInboxUnread'
 
 const reviewTokenIn = hash => hash.match(/^#review\/([0-9a-f-]{36})$/)?.[1] || ''
 
@@ -44,10 +46,12 @@ export default function App() {
   const [isAccount, setIsAccount] = useState(() => window.location.hash === '#account')
   const [reviewToken, setReviewToken] = useState(() => reviewTokenIn(window.location.hash))
   const [isAllReviews, setIsAllReviews] = useState(() => window.location.hash === '#all-reviews')
+  const [isInbox, setIsInbox] = useState(() => window.location.hash === '#inbox')
   const homeReviews = useReviews(3)
+  const inboxUnread = useInboxUnread('unread', Boolean(client.user && client.profileComplete))
   const visibleServices = settings.services.filter(item => item.visible)
   const openDays = settings.hours.filter(item => item.open)
-  const hoursSummary = openDays.length === 0 ? 'Closed this week' : openDays.length === 6 && !settings.hours[5].open && openDays.every(item => item.start === openDays[0].start && item.end === openDays[0].end) ? `Sat–Thu · ${openDays[0].start}–${openDays[0].end}` : `${openDays.length} open days · See weekly hours`
+  const hoursSummary = openDays.length === 0 ? 'Closed this week' : openDays.length === 7 && openDays.every(isAllDay) ? 'Open 24 hours, every day' : openDays.length === 6 && !settings.hours[5].open && openDays.every(item => item.start === openDays[0].start && item.end === openDays[0].end) ? `Sat–Thu · ${hoursText(openDays[0])}` : `${openDays.length} open days · See weekly hours`
   const friday = settings.hours[5]
   const [now, setNow] = useState(() => Date.now())
   useEffect(() => {
@@ -63,7 +67,7 @@ export default function App() {
   useEffect(() => {
     const navigate = () => {
       const hash = window.location.hash
-      setBookingRequest(null); setMenuOpen(false); setIsAdmin(hash === '#admin'); setIsPrivacy(hash === '#privacy'); setIsAccount(hash === '#account'); setReviewToken(reviewTokenIn(hash)); setIsAllReviews(hash === '#all-reviews')
+      setBookingRequest(null); setMenuOpen(false); setIsAdmin(hash === '#admin'); setIsPrivacy(hash === '#privacy'); setIsAccount(hash === '#account'); setReviewToken(reviewTokenIn(hash)); setIsAllReviews(hash === '#all-reviews'); setIsInbox(hash === '#inbox')
       if (hash === '#account' && dialogRef.current?.open) dialogRef.current.close()
     }
     window.addEventListener('hashchange', navigate)
@@ -76,7 +80,7 @@ export default function App() {
     return () => cancelAnimationFrame(frame)
   }, [isAdmin])
 
-  const fullPage = isAccount || Boolean(reviewToken) || isAllReviews
+  const fullPage = isAccount || Boolean(reviewToken) || isAllReviews || isInbox
   useEffect(() => {
     if (!fullPage || isAdmin) return
     const previousOverflow = document.body.style.overflow
@@ -179,6 +183,7 @@ export default function App() {
             </a>
           </nav>
           <div className="desktop-actions header-actions">
+            {client.user && client.profileComplete && <a className="btn btn-ghost button-sign-in header-inbox" href="#inbox">Inbox{inboxUnread > 0 && <b aria-label={`${inboxUnread} unread`}>{inboxUnread}</b>}</a>}
             <button className="btn btn-ghost button-sign-in" data-action="account" type="button">
               {client.user && <HeaderAvatar user={client.user} status={profileStatus} size={28} />}{client.user ? 'Account' : 'Sign in'}
             </button>
@@ -188,8 +193,8 @@ export default function App() {
           </div>
         </div>
       <button type="button" className="mobile-menu-toggle" aria-label={menuOpen ? 'Close navigation' : 'Open navigation'} aria-expanded={menuOpen} aria-controls="mobile-navigation" onClick={() => setMenuOpen(!menuOpen)}><span /><span /></button>
-      {client.user && <button type="button" className="mobile-account" data-action="account" aria-label="My account"><HeaderAvatar user={client.user} status={profileStatus} size={36} /></button>}
-      {menuOpen && <nav id="mobile-navigation" className="mobile-navigation" aria-label="Mobile navigation" onClick={() => setMenuOpen(false)}><a href="#services">Services</a><a href="#story">The Block</a><a href="#reviews">Reviews</a><a href="#visit">Visit</a><button data-action="account">{client.user ? 'My account' : 'Sign in'}</button></nav>}
+      {client.user && <button type="button" className="mobile-account" data-action="account" aria-label="My account"><HeaderAvatar user={client.user} status={profileStatus} size={36} />{inboxUnread > 0 && <i className="mobile-unread" aria-label={`${inboxUnread} unread messages`} />}</button>}
+      {menuOpen && <nav id="mobile-navigation" className="mobile-navigation" aria-label="Mobile navigation" onClick={() => setMenuOpen(false)}><a href="#services">Services</a><a href="#story">The Block</a><a href="#reviews">Reviews</a>{client.user && client.profileComplete && <a href="#inbox">Inbox{inboxUnread > 0 ? ` · ${inboxUnread} new` : ''}</a>}<a href="#visit">Visit</a><button data-action="account">{client.user ? 'My account' : 'Sign in'}</button></nav>}
     </header>
       <main id="main-content">
       <section id="top" className="hero hero-frame">
@@ -600,11 +605,11 @@ export default function App() {
                 Friday
               </span>
               <span className="text-small">
-                {friday.open ? `${friday.start}–${friday.end}` : 'Closed'}
+                {friday.open ? hoursText(friday) : 'Closed'}
               </span>
             </div>
           </div>
-          <details className="weekly-hours"><summary>Weekly working hours</summary><dl>{settings.hours.map(day => <div key={day.weekday}><dt>{day.day}</dt><dd>{day.open ? `${day.start}–${day.end}${day.breakStart && day.breakEnd ? ` · break ${day.breakStart}–${day.breakEnd}` : ''}` : 'Closed'}</dd></div>)}</dl></details>
+          <details className="weekly-hours"><summary>Weekly working hours</summary><dl>{settings.hours.map(day => <div key={day.weekday}><dt>{day.day}</dt><dd>{day.open ? `${hoursText(day)}${dayBreaks(day).length ? ` · break ${dayBreaks(day).map(pause => `${pause.start}–${pause.end}`).join(', ')}` : ''}` : 'Closed'}</dd></div>)}</dl></details>
         </div>
         <div className="reveal locked-map map-frame">
           <div aria-hidden="true" className="map-blur">
@@ -677,7 +682,8 @@ export default function App() {
 
       </button>
     <div className="mobile-booking-bar"><button className="mobile-book" data-action="booking">Book the chair <span aria-hidden="true">→</span></button><button className="mobile-chat" data-action="whatsapp" aria-label="WhatsApp Skee"><ChatIcon /></button></div>
-      {isAccount && <AccountPage client={client} settings={settings} onClose={() => { window.location.hash = 'top' }} onBook={(serviceId, giftId) => setBookingRequest({ serviceId, giftId })} onSignIn={openAccount} />}
+      {isAccount && <AccountPage client={client} settings={settings} onClose={() => { window.location.hash = 'top' }} onBook={(serviceId, giftId) => setBookingRequest({ serviceId, giftId })} onSignIn={openAccount} inboxUnread={inboxUnread} />}
+      {isInbox && <InboxPage client={client} onClose={() => { window.location.hash = 'top' }} onSignIn={openAccount} />}
       {reviewToken && <ReviewPage key={reviewToken} token={reviewToken} signedIn={Boolean(client.user && client.profileComplete)} />}
       {isAllReviews && <AllReviews />}
       <dialog ref={bookingDialogRef} className="booking-dialog" aria-labelledby="booking-title" onClose={() => setBookingRequest(null)}>

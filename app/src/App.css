@@ -249,3 +249,7 @@ button.card{text-align:left;width:100%}
 .review-author{display:inline-flex;align-items:center;gap:10px}
 .review-author img{width:32px;height:32px;border-radius:50%;object-fit:cover;border:1px solid #C9A96A}
 .reviews-empty{grid-column:1/-1;margin:0;padding:32px;border:1px dashed #333;font-size:15px;line-height:1.6;color:#A8A49D}
+.header-inbox{display:inline-flex;align-items:center;gap:8px;text-decoration:none}
+.header-inbox b{min-width:18px;padding:2px 5px;border-radius:9px;background:#C9A96A;color:#0B0B0B;font-size:11px;font-weight:600;line-height:1.2;text-align:center}
+.mobile-account{position:relative}
+.mobile-unread{position:absolute;top:0;right:0;width:10px;height:10px;border:2px solid #0B0B0B;border-radius:50%;background:#C9A96A}

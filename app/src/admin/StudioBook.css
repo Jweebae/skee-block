@@ -18,7 +18,13 @@
 .close-visit-sum{margin:0;font-size:14px;line-height:1.6;color:#D9D5CE}
 .close-visit .admin-card-actions{margin-top:0;padding-top:0;border-top:0}
 .client-table{display:grid;margin-top:16px;border:1px solid #262626}
-.client-head,.client-row>summary{display:grid;grid-template-columns:minmax(220px,2.2fr) 130px 80px 110px 100px 110px;gap:12px;align-items:center;padding:12px 16px}
+.client-head,.client-row>summary{display:grid;grid-template-columns:minmax(200px,2.2fr) 130px 76px 100px 90px 100px 104px;gap:12px;align-items:center;padding:12px 16px}
+.client-message .admin-outline{min-height:36px;padding:0 10px;font-size:10px}
+.client-message small{font-size:12px;color:#6E6B66}
+.admin-unread{margin-left:auto;min-width:20px;padding:2px 6px;border-radius:10px;background:#C9A96A;color:#0B0B0B;font-size:11px;font-weight:600;text-align:center}
+.admin-inbox{display:grid;grid-template-columns:320px minmax(0,1fr);height:min(66vh,620px);min-height:460px;border:1px solid #262626;background:#0B0B0B}
+.admin-inbox .inbox-list{padding:16px}
+.inbox-reports{display:grid;gap:8px}.inbox-reports .lbl{color:#E39A8E}.inbox-reports i{color:#E39A8E}
 .client-head{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#6E6B66;border-bottom:1px solid #262626}
 .client-row+.client-row{border-top:1px solid #1E1E1E}
 .client-row>summary{cursor:pointer;list-style:none;font-size:14px;color:#D9D5CE}
@@ -115,4 +121,4 @@
 .review-flags{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px;align-items:flex-start}
 .review-flags li{padding:5px 8px;border:1px solid #E39A8E66;font-size:11px;color:#E39A8E}
 @media(max-width:1100px){.money-columns{grid-template-columns:minmax(0,1fr)}.client-head{display:none}.client-row>summary{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 16px}.client-who{grid-column:1/-1}.client-row>summary>[data-label]::before{content:attr(data-label);display:block;margin-bottom:3px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#6E6B66}}
-@media(max-width:760px){.book-toolbar{grid-template-columns:minmax(0,1fr)}.money-plot{height:180px;margin-left:56px}.money-axis{margin-left:56px}.money-line-main{grid-template-columns:minmax(0,1fr) auto}.money-date{grid-column:1/-1}.money-tools{grid-column:1/-1;justify-content:flex-start}.money-hero{padding:20px}.money-chart{padding:14px}}
+@media(max-width:760px){.admin-inbox{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) minmax(0,1.4fr);height:86vh}.admin-inbox .inbox-list{border-right:0;border-bottom:1px solid #262626}.client-message{grid-column:1/-1}.book-toolbar{grid-template-columns:minmax(0,1fr)}.money-plot{height:180px;margin-left:56px}.money-axis{margin-left:56px}.money-line-main{grid-template-columns:minmax(0,1fr) auto}.money-date{grid-column:1/-1}.money-tools{grid-column:1/-1;justify-content:flex-start}.money-hero{padding:20px}.money-chart{padding:14px}}

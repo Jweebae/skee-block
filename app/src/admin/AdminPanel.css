@@ -163,3 +163,27 @@
 .offer-items-editor strong{color:#C9A96A;font-weight:500}
 .offer-cut-included{padding:12px 14px;border:1px solid #C9A96A55;border-radius:2px;background:#C9A96A0D;color:#F2EFE9;font-size:14px}
 .offer-cut-included-note{margin-top:-4px!important}
+.hours-day-tools{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.hours-summary{font-size:13px;color:#BDB8B0;font-variant-numeric:tabular-nums}
+.hours-track{position:relative;height:44px;margin:8px 12px 0;touch-action:pan-y;user-select:none}
+.hours-rail{position:absolute;left:0;right:0;top:50%;height:6px;margin-top:-3px;border-radius:3px;background:#262626}
+.hours-open{position:absolute;top:50%;height:18px;margin-top:-9px;padding:0;border:0;border-radius:4px;background:linear-gradient(90deg,#B98A28,#C9A96A);cursor:copy}
+.hours-open:hover{filter:brightness(1.12)}
+.hours-break{position:absolute;top:50%;height:30px;margin-top:-15px;transform:translateX(-50%);border:1px solid #6E6B66;border-radius:3px;z-index:1;background:repeating-linear-gradient(135deg,#131313 0 4px,#2A2A2A 4px 8px);cursor:grab;touch-action:none}
+.hours-track[data-dragging=true] .hours-break{cursor:grabbing}
+.hours-handle{position:absolute;top:50%;width:24px;height:24px;margin:-12px 0 0 -12px;border:2px solid #0B0B0B;border-radius:50%;background:#F2EFE9;box-shadow:0 0 0 1px #C9A96A;cursor:ew-resize;touch-action:none;z-index:4}
+.hours-handle:not(.hours-handle-break)::before{content:'';position:absolute;inset:-10px}
+.hours-handle:hover{background:#fff}
+.hours-handle:focus-visible{outline:2px solid #C9A96A;outline-offset:3px}
+.hours-handle-break{width:14px;height:30px;margin:-15px 0 0;border:1px solid #0B0B0B;border-radius:0 3px 3px 0;background:#BDB8B0;box-shadow:none;z-index:3}
+.hours-handle-from{transform:translateX(-100%);border-radius:3px 0 0 3px}
+@media(pointer:coarse){.hours-handle-break{width:20px}}
+.hours-ticks{position:relative;height:18px;margin:2px 12px 0;font-size:11px;color:#6E6B66;font-variant-numeric:tabular-nums}
+.hours-ticks span{position:absolute;transform:translateX(-50%)}
+.hours-actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:16px}
+.hours-actions .admin-outline{min-height:38px;padding:0 12px;font-size:10px}
+.hours-actions .admin-outline[aria-pressed=true]{border-color:#C9A96A;color:#C9A96A}
+.hours-chip{display:inline-flex;align-items:center;gap:4px;min-height:38px;padding:0 4px 0 12px;border:1px solid #333;border-radius:2px;font-size:13px;color:#D9D5CE;font-variant-numeric:tabular-nums}
+.hours-chip button{width:30px;height:30px;padding:0;border:0;background:none;color:#D9A89F;font-size:17px;cursor:pointer}
+.hours-closed{margin:0;font-size:14px;color:#8E8B85}
+.hours-day[data-open=false] .admin-card-heading{margin-bottom:12px}

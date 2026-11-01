@@ -17,6 +17,8 @@ import './BookingFlow.css'
 import { previewSlots } from '../settings/studioSettings'
 
 const STEPS = ['Service', 'Add-ons', 'Date & time', 'Review']
+// Night only appears for a day that really has night hours.
+const TIME_GROUPS = [['Night', t => t < '06:00'], ['Morning', t => t >= '06:00' && t < '14:00'], ['Afternoon', t => t >= '14:00']]
 const TITLES = [<>Choose your <em>service</em>.</>, <>Refine the <em>ritual</em>.</>, <>Pick your <em>hour</em>.</>, <>Review & <em>confirm</em>.</>]
 
 function LockIcon() {
@@ -237,7 +239,7 @@ export default function BookingFlow({ settings, initialServiceId, initialAddons,
             {step === 2 && <div className="booking-date-step"><p className="booking-hint">Times follow the studio’s working hours and the full length of your visit. Times already taken are hidden. All times are in M’Sila (UTC+1).</p>{busyError && <p className="booking-hint">{busyError}</p>}<fieldset className="booking-fieldset"><legend className="lbl">Choose a date · next two weeks</legend><div className="booking-date-rail">{bookableDates.map(item => <label key={item.id} className={`booking-date ${item.closed ? 'is-closed' : ''} ${dateId === item.id ? 'is-selected' : ''}`}><input type="radio" name="date" value={item.id} disabled={item.closed} checked={dateId === item.id} onChange={() => { setDateId(item.id); setTime('') }} /><span>{item.weekday}</span><span className="serif">{item.day}</span><span>{item.closed ? 'No times' : item.month}</span></label>)}</div></fieldset>
               {bookableDates.every(item => item.closed) && <p className="booking-hint">No times fit this selection in the next two weeks. Try fewer extras or contact Skee.</p>}
               {!date && <p className="booking-hint">Select a date to see the free times.</p>}
-              {date && <fieldset className="booking-fieldset"><legend className="lbl">Free times · {date.label}</legend>{['Morning', 'Afternoon'].map((period, index) => <div className="booking-time-group" key={period}><h2 className="lbl">{period}</h2>{!times.some(t => index === 0 ? t < '14:00' : t >= '14:00') && <p className="booking-hint">No times in this part of the day.</p>}<div className="booking-time-grid">{times.filter(t => index === 0 ? t < '14:00' : t >= '14:00').map(t => <label key={t} className={`booking-time ${time === t ? 'is-selected' : ''}`}><input type="radio" name="time" value={t} checked={time === t} onChange={() => setTime(t)} /><span>{t}</span></label>)}</div></div>)}</fieldset>}
+              {date && <fieldset className="booking-fieldset"><legend className="lbl">Free times · {date.label}</legend>{TIME_GROUPS.filter(([period, inGroup]) => period !== 'Night' || times.some(inGroup)).map(([period, inGroup]) => <div className="booking-time-group" key={period}><h2 className="lbl">{period}</h2>{!times.some(inGroup) && <p className="booking-hint">No times in this part of the day.</p>}<div className="booking-time-grid">{times.filter(inGroup).map(t => <label key={t} className={`booking-time ${time === t ? 'is-selected' : ''}`}><input type="radio" name="time" value={t} checked={time === t} onChange={() => setTime(t)} /><span>{t}</span></label>)}</div></div>)}</fieldset>}
             </div>}
 
             {step === 3 && <div className="booking-review">

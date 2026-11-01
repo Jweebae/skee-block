@@ -62,7 +62,6 @@ function BookingCard({ booking, locationUrl, onAction, busy, now, photo, payment
   const started = new Date(booking.starts_at).getTime() <= now
   const { time } = algiersParts(booking.starts_at)
   const live = ['requested', 'confirmed'].includes(booking.status)
-  const dueToday = algiersParts(booking.starts_at).date <= algiersParts(now).date
   const act = (action, extra) => { setConfirming(''); onAction(booking, action, extra) }
   return <section className="admin-editor-card appt-card" data-status={booking.status} aria-label={`${booking.code} ${booking.client_name}`}>
     <div className="appt-head">
@@ -86,14 +85,15 @@ function BookingCard({ booking, locationUrl, onAction, busy, now, photo, payment
     </div> : <div className="admin-card-actions appt-actions">
       {booking.status === 'requested' && <><button type="button" className="admin-save" disabled={busy} onClick={() => act('confirm')}>Accept</button>
         {confirming === 'decline' ? <button type="button" className="admin-outline admin-delete" disabled={busy} onClick={() => act('decline')}>Yes, decline</button> : <button type="button" className="admin-outline" disabled={busy} onClick={() => setConfirming('decline')}>Decline</button>}</>}
-      {booking.status === 'confirmed' && <button type="button" className="admin-save" disabled={busy || !dueToday} onClick={() => setClosing(true)}>{dueToday ? 'Cut done' : `Cut done · from ${dayLabel(booking.starts_at, { day: 'numeric', month: 'short' })}`}</button>}
+      {booking.status === 'confirmed' && <button type="button" className="admin-save" disabled={busy} onClick={() => setClosing(true)}>Cut done</button>}
       {booking.status === 'confirmed' && started && <button type="button" className="admin-outline" disabled={busy} onClick={() => act('no_show')}>Missed</button>}
       {booking.status === 'completed' && <button type="button" className="admin-save" disabled={busy} onClick={() => setClosing(true)}>{payment ? 'Edit payment' : 'Add payment'}</button>}
-      {booking.status === 'completed' && <button type="button" className="admin-outline" disabled={busy} onClick={() => act('no_show')}>Mark missed instead</button>}
+      {booking.status === 'completed' && started && <button type="button" className="admin-outline" disabled={busy} onClick={() => act('no_show')}>Mark missed instead</button>}
       {booking.status === 'no_show' && <button type="button" className="admin-outline" disabled={busy} onClick={() => setClosing(true)}>Cut done instead</button>}
+      {['completed', 'no_show'].includes(booking.status) && (confirming === 'reopen' ? <><button type="button" className="admin-outline admin-delete" disabled={busy} onClick={() => act('reopen')}>Yes, reopen it</button><button type="button" className="admin-outline" onClick={() => setConfirming('')}>Keep it</button></> : <button type="button" className="admin-outline" disabled={busy} onClick={() => setConfirming('reopen')}>Undo</button>)}
       {live && !started && <button type="button" className="admin-outline" disabled={busy} onClick={() => setMoving(true)}>Move</button>}
       {live && (confirming === 'cancel' ? <button type="button" className="admin-outline admin-delete" disabled={busy} onClick={() => act('cancel')}>Yes, cancel it</button> : <button type="button" className="admin-outline admin-delete" disabled={busy} onClick={() => setConfirming('cancel')}>Cancel</button>)}
-      {confirming && <button type="button" className="admin-outline" onClick={() => setConfirming('')}>Keep it</button>}
+      {confirming && confirming !== 'reopen' && <button type="button" className="admin-outline" onClick={() => setConfirming('')}>Keep it</button>}
     </div>}
     {booking.client_phone && (live || booking.status === 'completed') && <div className="appt-whatsapp"><span className="lbl">WhatsApp</span>{(live ? whatsappMessages(booking, locationUrl) : reviewMessage(booking)).map(([label, text]) => <a key={label} className="admin-outline" href={whatsappLink(booking.client_phone, text)} target="_blank" rel="noreferrer">{label} ↗</a>)}</div>}
   </section>
@@ -162,7 +162,7 @@ export default function AppointmentsManager({ settings, headingRef }) {
       else if (action === 'close') await callBookings('owner_close', { id: booking.id, ...extra })
       else await callBookings('owner_update', { id: booking.id, move: action })
       const closedText = booking.status === 'completed' ? 'payment saved' : booking.client_email ? 'closed; the client was emailed for a review' : 'closed'
-      const done = { confirm: 'accepted; the client was emailed', decline: 'declined; the client was emailed', cancel: 'cancelled; the client was emailed', close: closedText, no_show: 'marked missed', move: 'moved; the client was emailed' }[action]
+      const done = { confirm: 'accepted; the client was emailed', decline: 'declined; the client was emailed', cancel: 'cancelled; the client was emailed', close: closedText, no_show: 'marked missed', reopen: 'reopened; it is a confirmed appointment again and its payment was removed', move: 'moved; the client was emailed' }[action]
       setMessage(`${booking.code} (${booking.client_name}) ${done}.`)
       setVersion(value => value + 1)
     } catch (problem) { setError(problem.message) } finally { setBusy(false) }

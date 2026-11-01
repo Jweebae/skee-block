@@ -126,7 +126,7 @@ function ClientCard({ client, payments, today, onChanged }) {
   </div>
 }
 
-export default function ClientsManager({ headingRef }) {
+export default function ClientsManager({ headingRef, onMessage }) {
   const book = useStudioBook()
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState('all')
@@ -154,7 +154,7 @@ export default function ClientsManager({ headingRef }) {
       </div>
       <div className="book-tabs" role="group" aria-label="Filter clients">{FILTERS.map(([id, label]) => <button key={id} type="button" aria-pressed={filter === id} onClick={() => setFilter(id)}>{label}</button>)}</div>
       {shown.length ? <div className="client-table" role="list">
-        <div className="client-head" aria-hidden="true"><span>Client</span><span>WhatsApp</span><span>Done cuts</span><span>Spent</span><span>Debt</span><span>Last visit</span></div>
+        <div className="client-head" aria-hidden="true"><span>Client</span><span>WhatsApp</span><span>Done cuts</span><span>Spent</span><span>Debt</span><span>Last visit</span><span /></div>
         {shown.map(client => <details key={client.key} className="client-row" role="listitem">
           <summary>
             <span className="client-who">{client.avatarPath && data.photos[client.avatarPath] ? <img src={data.photos[client.avatarPath]} alt="" /> : <i aria-hidden="true">{client.name.charAt(0).toUpperCase()}</i>}<span><b>{client.name}</b><small>{client.vip && <em>VIP · </em>}{client.isOwner ? 'Owner · ' : ''}{client.email || (client.account ? '' : 'Walk-in')}</small></span></span>
@@ -163,6 +163,7 @@ export default function ClientsManager({ headingRef }) {
             <span data-label="Spent" className="client-num">{formatPrice(client.spent)}</span>
             <span data-label="Debt" className={`client-num${client.owed ? ' client-owes' : ''}`}>{client.owed ? formatPrice(client.owed) : '—'}</span>
             <span data-label="Last visit">{shortDay(client.lastVisit)}</span>
+            <span className="client-message">{client.userId && !client.isOwner ? <button type="button" className="admin-outline" aria-label={`Message ${client.name}`} onClick={event => { event.preventDefault(); onMessage(client.userId) }}>Message</button> : !client.userId && <small>No account</small>}</span>
           </summary>
           <ClientCard client={client} payments={data.payments} today={today} onChanged={changed} />
         </details>)}

@@ -39,7 +39,7 @@ const reply = (req: Request, status: number, body: unknown) =>
   new Response(JSON.stringify(body), { status, headers: { ...cors(req), 'Content-Type': 'application/json' } })
 
 // ---------- time and settings ----------
-type Hours = { weekday: number; open: boolean; start: string; end: string; breakStart: string; breakEnd: string }
+type Hours = { weekday: number; open: boolean; start: string; end: string; breaks?: { start: string; end: string }[]; breakStart?: string; breakEnd?: string }
 type Settings = { services: any[]; addons: any[]; hours: Hours[]; offers?: any[] }
 
 const minutes = (value: string) => /^([01]\d|2[0-3]):[0-5]\d$/.test(value ?? '') ? Number(value.slice(0, 2)) * 60 + Number(value.slice(3)) : NaN
@@ -54,13 +54,19 @@ const addDays = (date: string, days: number) => {
   return next.toISOString().slice(0, 10)
 }
 
+// 24:00 only ever means the end of a day. Days saved before breaks became a list have one breakStart and breakEnd.
+const dayMinutes = (value: string) => value === '24:00' ? 1440 : minutes(value)
+const breaksOf = (day: Hours) => day.breaks ?? (day.breakStart && day.breakEnd ? [{ start: day.breakStart, end: day.breakEnd }] : [])
+
+// The same rule as previewSlots in app/src/settings/studioSettings.js, so keep the two in step.
 function slotsFor(hours: Hours[], date: string, duration: number) {
   const day = hours.find(row => row.weekday === new Date(`${date}T12:00:00Z`).getUTCDay())
   if (!day?.open) return []
-  const start = minutes(day.start), end = minutes(day.end), breakStart = minutes(day.breakStart), breakEnd = minutes(day.breakEnd)
+  const start = dayMinutes(day.start), end = dayMinutes(day.end)
+  const pauses = breaksOf(day).map(pause => [dayMinutes(pause.start), dayMinutes(pause.end)])
   const slots: string[] = []
   for (let at = start; at + duration <= end; at += 15) {
-    if (Number.isFinite(breakStart) && Number.isFinite(breakEnd) && at < breakEnd && at + duration > breakStart) continue
+    if (pauses.some(([from, to]) => at < to && at + duration > from)) continue
     slots.push(`${String(Math.floor(at / 60)).padStart(2, '0')}:${String(at % 60).padStart(2, '0')}`)
   }
   return slots
@@ -421,6 +427,7 @@ const OWNER_MOVES: Record<string, { from: string[]; to: string; afterStart?: boo
   decline: { from: ['requested'], to: 'declined' },
   cancel: { from: ['requested', 'confirmed'], to: 'cancelled' },
   no_show: { from: ['confirmed', 'completed'], to: 'no_show', afterStart: true },
+  reopen: { from: ['completed', 'no_show'], to: 'confirmed' },
 }
 
 async function ownerUpdate(db: SupabaseClient, body: any) {
@@ -429,8 +436,11 @@ async function ownerUpdate(db: SupabaseClient, body: any) {
   const booking = await getBooking(db, body.id)
   if (!move.from.includes(booking.status)) fail(409, 'wrong_status')
   if (move.afterStart && new Date(booking.starts_at).getTime() > Date.now()) fail(409, 'not_started')
-  if (move.to === 'no_show') await clearPayment(db, booking.id)
+  const undoing = move.to === 'no_show' || body.move === 'reopen'
+  if (undoing) await refuseIfRepaid(db, booking.id)
+  // Reopening fails here if someone took the time meanwhile, so the payment is only removed once this has worked.
   const updated = await updateBooking(db, booking.id, { status: move.to, cancelled_by: move.to === 'cancelled' ? 'studio' : booking.cancelled_by })
+  if (undoing) await clearPayment(db, booking.id)
   if (['declined', 'cancelled'].includes(move.to)) await releaseGift(db, booking)
   if (move.to === 'confirmed') await notifyClient(db, updated, 'booking-confirmed', 'confirmed')
   if (move.to === 'declined') await notifyClient(db, updated, 'booking-declined', 'declined')
@@ -499,7 +509,8 @@ async function savePayment(db: SupabaseClient, booking: any, body: any) {
   const { data: debt } = await db.from('client_debts').select('id').eq('booking_id', booking.id).maybeSingle()
   if (debt && owed < await debtRepaid(db, debt.id)) fail(409, 'debt_repaid')
   const note = cleanText(body.note, 500)
-  const paidOn = algiersParts(new Date(booking.starts_at)).date
+  // The day of the visit, or today if it is closed ahead of time, so money never lands on a future date.
+  const paidOn = [algiersParts(new Date(booking.starts_at)).date, algiersParts(new Date()).date].sort()[0]
   const { error } = await db.from('visit_payments').upsert({ booking_id: booking.id, amount_received: received, is_free: free, note, paid_on: paidOn, updated_at: new Date().toISOString() })
   if (error) { console.error('payment failed', error); fail(500, 'save_failed') }
   if (owed > 0) {
@@ -509,9 +520,12 @@ async function savePayment(db: SupabaseClient, booking: any, body: any) {
   } else if (debt) await db.from('client_debts').delete().eq('id', debt.id)
 }
 
-async function clearPayment(db: SupabaseClient, bookingId: string) {
+async function refuseIfRepaid(db: SupabaseClient, bookingId: string) {
   const { data: debt } = await db.from('client_debts').select('id').eq('booking_id', bookingId).maybeSingle()
   if (debt && await debtRepaid(db, debt.id) > 0) fail(409, 'debt_repaid')
+}
+
+async function clearPayment(db: SupabaseClient, bookingId: string) {
   await db.from('client_debts').delete().eq('booking_id', bookingId)
   await db.from('visit_payments').delete().eq('booking_id', bookingId)
 }
@@ -521,7 +535,6 @@ async function clearPayment(db: SupabaseClient, bookingId: string) {
 async function ownerClose(db: SupabaseClient, body: any) {
   const booking = await getBooking(db, body.id)
   if (!['confirmed', 'no_show', 'completed'].includes(booking.status)) fail(409, 'wrong_status')
-  if (algiersParts(new Date(booking.starts_at)).date > algiersParts(new Date()).date) fail(409, 'not_today')
   await savePayment(db, booking, body)
   const updated = await updateBooking(db, booking.id, { status: 'completed' })
   if (booking.status !== 'completed') await notifyClient(db, updated, 'review-request', 'review_request')

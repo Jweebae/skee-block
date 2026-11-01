@@ -42,12 +42,13 @@ export function getPreviewDates(now = new Date()) {
   const parts = new Intl.DateTimeFormat('en', { timeZone: 'Africa/Algiers', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(now)
   const part = type => parts.find(item => item.type === type).value
   const today = new Date(`${part('year')}-${part('month')}-${part('day')}T12:00:00Z`)
-  return Array.from({ length: 14 }, (_, index) => {
+  // Today through two weeks ahead, the same window the bookings Edge Function allows.
+  return Array.from({ length: 15 }, (_, index) => {
     const date = new Date(today)
-    date.setUTCDate(date.getUTCDate() + index + 1)
+    date.setUTCDate(date.getUTCDate() + index)
     return {
       id: date.toISOString().slice(0, 10),
-      weekday: date.toLocaleDateString('en-GB', { weekday: 'short', timeZone: 'UTC' }),
+      weekday: index === 0 ? 'Today' : date.toLocaleDateString('en-GB', { weekday: 'short', timeZone: 'UTC' }),
       day: date.getUTCDate(),
       month: date.toLocaleDateString('en-GB', { month: 'short', timeZone: 'UTC' }),
       label: date.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'long', timeZone: 'UTC' }),

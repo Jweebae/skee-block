@@ -23,7 +23,6 @@ const MESSAGES = {
   bad_email: 'Check the email address.',
   offer_ended: 'This offer has just ended, so the normal price now applies. Check the total, then send your request again.',
   offer_changed: 'Your choices no longer match this offer, so the normal price now applies. Check the total, then send your request again.',
-  not_today: 'You can close a visit from the day of the appointment.',
   bad_amount: 'Enter the amount as a whole number of dinars.',
   debt_repaid: 'Part of this debt has already been repaid. Remove that repayment in Money first.',
   no_email: 'This client has no email address. Use WhatsApp instead.',

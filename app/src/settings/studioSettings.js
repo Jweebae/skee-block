@@ -17,7 +17,7 @@ export function createDefaultSettings() {
     version: 2,
     services: SERVICES.map((item, index) => ({ ...item, visible: true, preferences: PREFERENCES[item.id], category: ['Signature', 'Fade', 'Beard', 'Ritual', 'Pair', 'The full hour and a half'][index] })),
     addons: structuredClone(PREVIEW_ADDONS),
-    hours: WEEKDAYS.map((day, weekday) => ({ weekday, day, open: weekday !== 5, start: '10:00', end: '20:00', breakStart: '13:00', breakEnd: '14:00' })),
+    hours: WEEKDAYS.map((day, weekday) => ({ weekday, day, open: weekday !== 5, start: '10:00', end: '20:00', breaks: [{ start: '13:00', end: '14:00' }] })),
     offers: [],
   }
 }
@@ -49,11 +49,25 @@ function offerEndsAt(value, label) {
   return text
 }
 
+export const DAY_MINUTES = 1440
+export const MAX_BREAKS = 6
+
+// 24:00 is the end of the day, so a day can run from 00:00 to 24:00.
 export function timeInMinutes(value) {
+  if (value === '24:00') return DAY_MINUTES
   if (typeof value !== 'string' || !/^([01]\d|2[0-3]):[0-5]\d$/.test(value)) return NaN
   const [hour, minute] = value.split(':').map(Number)
   return hour * 60 + minute
 }
+export const minutesToClock = value => `${String(Math.floor(value / 60)).padStart(2, '0')}:${String(value % 60).padStart(2, '0')}`
+
+// Days saved before breaks became a list have a single breakStart and breakEnd.
+export function dayBreaks(day) {
+  if (Array.isArray(day?.breaks)) return day.breaks
+  return day?.breakStart && day?.breakEnd ? [{ start: day.breakStart, end: day.breakEnd }] : []
+}
+export const isAllDay = day => day.start === '00:00' && day.end === '24:00' && dayBreaks(day).length === 0
+export const hoursText = day => (isAllDay(day) ? '24 hours' : `${day.start}–${day.end}`)
 
 export function validateSettings(input) {
   if (!input || input.version !== 2 || !Array.isArray(input.services) || !Array.isArray(input.addons) || !Array.isArray(input.hours)) throw new Error('The saved studio settings have an unsupported format.')
@@ -82,12 +96,18 @@ export function validateSettings(input) {
     if (!item) throw new Error(`Working hours for ${day} are missing.`)
     const open = Boolean(item.open)
     const start = item.start || '10:00', end = item.end || '20:00'
-    const breakStart = item.breakStart || '', breakEnd = item.breakEnd || ''
-    if (!Number.isFinite(timeInMinutes(start)) || !Number.isFinite(timeInMinutes(end))) throw new Error(`${day}: enter valid opening and closing times.`)
-    if (open && timeInMinutes(start) >= timeInMinutes(end)) throw new Error(`${day}: closing time must be after opening time. Overnight hours are not supported yet.`)
-    if (open && Boolean(breakStart) !== Boolean(breakEnd)) throw new Error(`${day}: enter both break times, or leave both empty.`)
-    if (open && breakStart && (!Number.isFinite(timeInMinutes(breakStart)) || !Number.isFinite(timeInMinutes(breakEnd)) || timeInMinutes(breakStart) < timeInMinutes(start) || timeInMinutes(breakStart) >= timeInMinutes(breakEnd) || timeInMinutes(breakEnd) > timeInMinutes(end))) throw new Error(`${day}: the break must sit inside working hours, with its end after its start.`)
-    return { weekday, day, open, start, end, breakStart, breakEnd }
+    const opens = timeInMinutes(start), closes = timeInMinutes(end)
+    if (!Number.isFinite(opens) || !Number.isFinite(closes)) throw new Error(`${day}: enter valid opening and closing times.`)
+    if (open && opens >= closes) throw new Error(`${day}: closing time must be after opening time.`)
+    const breaks = [...dayBreaks(item)].sort((a, b) => timeInMinutes(a.start) - timeInMinutes(b.start))
+    if (breaks.length > MAX_BREAKS) throw new Error(`${day}: use up to ${MAX_BREAKS} breaks.`)
+    let previous = opens
+    for (const pause of breaks) {
+      const from = timeInMinutes(pause.start), to = timeInMinutes(pause.end)
+      if (open && (!Number.isFinite(from) || !Number.isFinite(to) || from >= to || from < previous || to > closes)) throw new Error(`${day}: each break must sit inside the opening hours, without overlapping another one.`)
+      previous = to
+    }
+    return { weekday, day, open, start, end, breaks: breaks.map(pause => ({ start: pause.start, end: pause.end })) }
   })
   const serviceIds = new Set(services.map(item => item.id))
   const offers = (Array.isArray(input.offers) ? input.offers : []).slice(0, MAX_OFFERS).map(item => {
@@ -152,10 +172,11 @@ export function previewSlots(hours, dateId, duration) {
   const day = hours.find(row => row.weekday === new Date(`${dateId}T12:00:00Z`).getUTCDay())
   if (!day?.open) return []
   const slots = [], start = timeInMinutes(day.start), end = timeInMinutes(day.end)
-  const breakStart = timeInMinutes(day.breakStart), breakEnd = timeInMinutes(day.breakEnd)
+  const breaks = dayBreaks(day).map(pause => [timeInMinutes(pause.start), timeInMinutes(pause.end)])
+  // The bookings Edge Function applies this same rule (slotsFor), so keep the two in step.
   for (let at = start; at + duration <= end; at += 15) {
-    if (Number.isFinite(breakStart) && Number.isFinite(breakEnd) && at < breakEnd && at + duration > breakStart) continue
-    slots.push(`${String(Math.floor(at / 60)).padStart(2, '0')}:${String(at % 60).padStart(2, '0')}`)
+    if (breaks.some(([from, to]) => at < to && at + duration > from)) continue
+    slots.push(minutesToClock(at))
   }
   return slots
 }
@@ -168,12 +189,15 @@ export function nextOpening(hours, now = Date.now()) {
     const day = hours.find(row => row.weekday === (local.getUTCDay() + offset) % 7)
     if (!day?.open) continue
     const start = timeInMinutes(day.start), end = timeInMinutes(day.end)
-    const breakStart = timeInMinutes(day.breakStart), breakEnd = timeInMinutes(day.breakEnd)
+    const breaks = dayBreaks(day)
     if (offset === 0) {
       if (minute >= end) continue
       if (minute >= start) {
-        if (Number.isFinite(breakStart) && minute >= breakStart && minute < breakEnd) return `Today · back at ${day.breakEnd}`
-        return `Open now · until ${Number.isFinite(breakStart) && minute < breakStart ? day.breakStart : day.end}`
+        const pause = breaks.find(item => minute >= timeInMinutes(item.start) && minute < timeInMinutes(item.end))
+        if (pause) return `Today · back at ${pause.end}`
+        if (isAllDay(day)) return 'Open now · 24 hours'
+        const next = breaks.find(item => timeInMinutes(item.start) > minute)
+        return `Open now · until ${next ? next.start : day.end === '24:00' ? 'midnight' : day.end}`
       }
       return `Today · ${day.start}`
     }

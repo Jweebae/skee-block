@@ -14,18 +14,23 @@ import ClientsManager from './ClientsManager'
 import DebtsManager from './DebtsManager'
 import MoneyManager from './MoneyManager'
 import ReviewsManager from './ReviewsManager'
+import InboxManager from './InboxManager'
+import HoursTimeline from './HoursTimeline'
+import useInboxUnread from '../inbox/useInboxUnread'
 import HeaderAvatar from '../auth/HeaderAvatar'
 import useClientProfile from '../auth/useClientProfile'
 import './AdminPanel.css'
 
 const SECTIONS = [ ['cuts', 'Cuts & preferences'], ['addons', 'Add-ons'], ['offers', 'Offers'], ['hours', 'Working hours'] ]
-const OWNER_SECTIONS = [['appointments', 'Appointments'], ['clients', 'Clients'], ['debts', 'Debts'], ['money', 'Money'], ['reviews', 'Reviews'], ...SECTIONS, ['studio', 'Studio details'], ['notifications', 'Notifications'], ['whatsapp', 'WhatsApp'], ['owners', 'Owners']] // these need the online database
+const OWNER_SECTIONS = [['appointments', 'Appointments'], ['inbox', 'Inbox'], ['clients', 'Clients'], ['debts', 'Debts'], ['money', 'Money'], ['reviews', 'Reviews'], ...SECTIONS, ['studio', 'Studio details'], ['notifications', 'Notifications'], ['whatsapp', 'WhatsApp'], ['owners', 'Owners']] // these need the online database
 
 export default function AdminPanel({ settings, storageError, onSave, owner = null }) {
   const [draft, setDraft] = useState(() => structuredClone(settings))
   const [section, setSection] = useState(owner ? 'appointments' : 'cuts')
   const sections = owner ? OWNER_SECTIONS : SECTIONS
   const ownerProfile = useClientProfile(owner?.user ?? null)
+  const inboxUnread = useInboxUnread('owner_unread', Boolean(owner))
+  const [messageTarget, setMessageTarget] = useState(null) // the client a Message button on the Clients page opens
   const ownerMeta = owner?.user?.user_metadata || {}
   const ownerName = ownerMeta.first_name || String(ownerMeta.full_name || ownerMeta.name || '').split(' ')[0] || owner?.user?.email || 'Owner'
   const [error, setError] = useState('')
@@ -58,6 +63,18 @@ export default function AdminPanel({ settings, storageError, onSave, owner = nul
     setDraft(current => ({ ...current, [collection]: current[collection].map(item => (collection === 'hours' ? item.weekday === id : item.id === id) ? { ...item, [field]: value } : item) }))
     setMessage('')
     setError('')
+  }
+
+  function updateDay(weekday, changes) {
+    setDraft(current => ({ ...current, hours: current.hours.map(item => (item.weekday === weekday ? { ...item, ...changes } : item)) }))
+    setMessage('')
+    setError('')
+  }
+
+  function copyDay({ open, start, end, breaks }) {
+    setDraft(current => ({ ...current, hours: current.hours.map(item => ({ ...item, open, start, end, breaks: structuredClone(breaks) })) }))
+    setError('')
+    setMessage('Copied to every day in the draft. Save to apply it.')
   }
 
   function addItem(collection) {
@@ -137,11 +154,11 @@ export default function AdminPanel({ settings, storageError, onSave, owner = nul
   return <div className="admin-page">
     <header className="admin-header"><a href="#top" className="admin-brand" onClick={leave}><img src={logo} alt="SKEE" /><span>Studio admin</span></a><div className="admin-header-right"><a href="#top" onClick={leave}>View website ↗</a>{owner?.user ? <div className="admin-owner"><HeaderAvatar user={owner.user} status={{ profile: ownerProfile.profile }} size={32} /><div>{ownerName}<small>Owner · {owner.user.email}</small></div></div> : <div className="admin-owner"><span>S</span><div>Said<small>Owner · public name “Skee”</small></div></div>}{owner && <button type="button" className="admin-outline" onClick={signOut}>Sign out</button>}</div></header>
     <div className="admin-shell">
-      <nav className="admin-sidebar" aria-label="Admin sections">{sections.map(([id, label], index) => <button key={id} aria-current={section === id ? 'page' : undefined} onClick={() => { setSection(id); setMessage(''); setError('') }}><span>{String(index + 1).padStart(2, '0')}</span>{label}</button>)}<div className="admin-sidebar-note"><span className="lbl">Studio settings</span><p>One base cut.<br />{formatPrice(BASE_CUT_PRICE)}.<br />Only extras add to the bill.</p></div></nav>
+      <nav className="admin-sidebar" aria-label="Admin sections">{sections.map(([id, label], index) => <button key={id} aria-current={section === id ? 'page' : undefined} onClick={() => { setSection(id); setMessageTarget(null); setMessage(''); setError('') }}><span>{String(index + 1).padStart(2, '0')}</span>{label}{id === 'inbox' && inboxUnread > 0 && <b className="admin-unread">{inboxUnread}</b>}</button>)}<div className="admin-sidebar-note"><span className="lbl">Studio settings</span><p>One base cut.<br />{formatPrice(BASE_CUT_PRICE)}.<br />Only extras add to the bill.</p></div></nav>
       <main className="admin-main">
         {owner ? <div className="admin-preview-note"><span className="lbl">Owner session</span><p>You are signed in as the owner. Saved changes are stored online and apply to the website on every device. Sample details stay until you change them.</p></div> : <div className="admin-preview-note"><span className="lbl">Local admin preview</span><p>Changes are saved in this browser only. Owner sign-in and shared online storage are not connected yet. Keep the sample details for now.</p></div>}
         {storageError && <p className="admin-error" role="alert">{storageError}</p>}
-        {section === 'owners' ? <OwnerManager headingRef={headingRef} /> : section === 'appointments' ? <AppointmentsManager settings={draft} headingRef={headingRef} /> : section === 'clients' ? <ClientsManager headingRef={headingRef} /> : section === 'debts' ? <DebtsManager headingRef={headingRef} /> : section === 'money' ? <MoneyManager headingRef={headingRef} /> : section === 'reviews' ? <ReviewsManager headingRef={headingRef} /> : section === 'studio' ? <StudioDetails headingRef={headingRef} /> : section === 'notifications' ? <NotificationSettings headingRef={headingRef} /> : section === 'whatsapp' ? <WhatsAppSettings headingRef={headingRef} /> : <form onSubmit={save}>
+        {section === 'owners' ? <OwnerManager headingRef={headingRef} /> : section === 'appointments' ? <AppointmentsManager settings={draft} headingRef={headingRef} /> : section === 'inbox' ? <InboxManager headingRef={headingRef} target={messageTarget} /> : section === 'clients' ? <ClientsManager headingRef={headingRef} onMessage={clientId => { setMessageTarget(clientId); setSection('inbox') }} /> : section === 'debts' ? <DebtsManager headingRef={headingRef} /> : section === 'money' ? <MoneyManager headingRef={headingRef} /> : section === 'reviews' ? <ReviewsManager headingRef={headingRef} /> : section === 'studio' ? <StudioDetails headingRef={headingRef} /> : section === 'notifications' ? <NotificationSettings headingRef={headingRef} /> : section === 'whatsapp' ? <WhatsAppSettings headingRef={headingRef} /> : <form onSubmit={save}>
           <div className="admin-title-row"><div><span className="lbl">Skee Block · Studio controls</span><h1 className="serif" ref={headingRef} tabIndex={-1}>{sections.find(([id]) => id === section)[1]}</h1><p>{section === 'cuts' ? 'Edit the menu, styling preferences and time needed for each cut.' : section === 'addons' ? 'Manage add-ons and the types clients choose, with a price and description for each type.' : section === 'offers' ? 'Up to three deals, shown above the menu on the homepage. With none, the homepage is unchanged.' : 'Set Skee’s weekly hours and breaks. The preview calendar follows this schedule.'}</p></div>{section !== 'hours' && <button type="button" className="admin-outline" disabled={section === 'offers' ? draft.offers.length >= MAX_OFFERS : draft[section === 'cuts' ? 'services' : 'addons'].length >= 100} onClick={() => addItem(section === 'cuts' ? 'services' : section === 'offers' ? 'offers' : 'addons')}>+ New {section === 'cuts' ? 'cut' : section === 'offers' ? 'offer' : 'add-on'}</button>}</div>
 
           {section === 'cuts' && <><div className="admin-price-rule"><span className="lbl">Fixed base price</span><strong>{formatPrice(BASE_CUT_PRICE)}</strong><span>Applies to every cut. Only optional add-ons change the total.</span></div><div className="admin-editor-list">{draft.services.map((item, index) => <section className="admin-editor-card" key={item.id} aria-label={`Cut ${index + 1}`}><div className="admin-card-heading"><span className="lbl">Cut {String(index + 1).padStart(2, '0')}</span><label className="admin-toggle"><input type="checkbox" checked={item.visible} onChange={e => update('services', item.id, 'visible', e.target.checked)} />Visible on website</label></div>
@@ -152,7 +169,7 @@ export default function AdminPanel({ settings, storageError, onSave, owner = nul
 
           {section === 'addons' && <AddonEditor items={draft.addons} onUpdate={update} onDuplicate={duplicateItem} onDelete={setDeleteTarget} onAddType={addType} onUpdateType={updateType} onDeleteType={(parentId, type) => setDeleteTarget({ collection: 'addons', parentId, id: type.id, name: type.name, kind: 'type' })} />}
 
-          {section === 'hours' && <><div className="admin-hours-note"><span className="lbl">Africa/Algiers · UTC+1</span><p>Same-day opening and closing times. Leave both break fields empty for a continuous day. Closed days and times that cannot fit the complete service are excluded from the booking preview.</p></div><div className="admin-editor-list">{draft.hours.map(item => <section className="admin-editor-card admin-day-card" key={item.weekday} aria-label={`${item.day} working hours`}><div className="admin-card-heading"><h2 className="serif">{item.day}</h2><label className="admin-toggle"><input type="checkbox" checked={item.open} onChange={e => update('hours', item.weekday, 'open', e.target.checked)} />{item.open ? 'Open' : 'Closed'}</label></div><div className="admin-time-grid">{[['start', 'Opens'], ['end', 'Closes'], ['breakStart', 'Break starts'], ['breakEnd', 'Break ends']].map(([field, label]) => <label key={field}>{label}<input aria-label={`${item.day} ${label.toLowerCase()}`} type="time" disabled={!item.open} required={item.open && ['start', 'end'].includes(field)} value={item[field]} onChange={e => update('hours', item.weekday, field, e.target.value)} /></label>)}</div></section>)}</div></>}
+          {section === 'hours' && <><div className="admin-hours-note"><span className="lbl">Africa/Algiers · UTC+1</span><p>Drag the two ends of a day’s bar to set when you open and close. Tap the gold bar to cut in a break, then drag the break or its edges. Clients only see times that fit the whole visit, and never a time inside a break.</p></div><div className="admin-editor-list">{draft.hours.map(item => <HoursTimeline key={item.weekday} day={item} onChange={changes => updateDay(item.weekday, changes)} onCopy={() => copyDay(item)} />)}</div></>}
 
           <div className="admin-save-bar"><div><span className="admin-dirty-status">{dirty ? 'Unsaved changes' : 'No unsaved changes'}</span><p>{owner ? 'Saved changes apply to the website and booking preview on every device.' : 'Saved changes apply to this browser’s website and booking preview.'}</p></div><button type="button" className="admin-outline" disabled={!dirty} onClick={() => { setDraft(structuredClone(settings)); setError(''); setMessage('Draft discarded. Saved settings kept.') }}>Discard changes</button><button type="submit" className="admin-save" disabled={!dirty}>Save all changes</button></div>
           {error && <p className="admin-error" role="alert">{error}</p>}{message && <p className="admin-message" role="status">{message}</p>}
