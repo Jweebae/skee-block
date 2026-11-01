@@ -663,8 +663,9 @@ export default function App() {
           <div className="lbl footer-bottom">
             <a href="#admin">Studio admin</a>
             <a href="#privacy">Privacy</a>
-            <span>
-              © Skee Block · M'Sila, Algeria
+            <span className="footer-credit">
+              <span>© Skee Block · M'Sila, Algeria</span>
+              <img src={`${import.meta.env.BASE_URL}signature.png`} className="creator-signature" alt="Developer signature" width="48" height="24" loading="lazy" decoding="async" />
             </span>
             <span>
               By appointment only

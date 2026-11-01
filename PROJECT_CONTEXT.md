@@ -798,3 +798,10 @@ The user confirmed Google sign-in worked and asked for a proper sign-up (first/l
 Two AI agents work on this project on this Mac: ChatGPT (desktop Work/Codex) and Claude Code (VS Code extension). Both edit this same local application and share memory only through `AGENTS.md` and this file. Do not replace the project with a different site builder. Maintain this file incrementally after meaningful milestones, record unfinished work before stopping, and update AGENTS.md when persistent rules change.
 
 This document should be updated after meaningful milestones or when project decisions materially change.
+
+## Footer signature — 2026-11-01 (Codex)
+
+- User requested their approved transparent handwritten signature, tiny in the website footer.
+- Scope: `app/src/App.jsx`, `app/src/App.css`, new `app/public/signature.png`, and this note. Display around 48 px wide, inverted to white on the dark footer. No booking, inbox, admin or backend changes.
+- Added beside the footer copyright at 48 × 24 CSS pixels, 70% opacity. PNG keeps its transparent background; CSS inverts its strokes to white. Scoped sizing overrides the existing mobile footer logo rule.
+- Checked in the actual production preview at desktop and 390 px phone width: PNG loaded, computed size 48 × 24, no horizontal overflow, clear of floating/pinned WhatsApp controls. `npm run build` and `npm run lint` pass (existing bundle-size notice only). Publishing through the existing main → Pages workflow.
