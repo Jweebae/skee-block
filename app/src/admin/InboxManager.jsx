@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { announceInboxChange, callInbox } from '../lib/inboxApi'
 import { algiersParts, dayLabel } from '../lib/bookingsApi'
 import Conversation from '../inbox/Conversation'
+import UsernameSearch from '../inbox/UsernameSearch'
 import '../inbox/Inbox.css'
 import './StudioBook.css'
 
@@ -9,6 +10,7 @@ import './StudioBook.css'
 // closed: one appears here only after a client reports it, and it can be read but not answered.
 const REFRESH_MS = 20000
 const when = value => `${dayLabel(value, { day: 'numeric', month: 'short' })} · ${algiersParts(value).time}`
+const searchUsernames = q => callInbox('owner_search', { q })
 
 export default function InboxManager({ headingRef, target }) {
   const [list, setList] = useState({ threads: null, reports: [] })
@@ -16,8 +18,6 @@ export default function InboxManager({ headingRef, target }) {
   const [selected, setSelected] = useState(() => (target ? { clientId: target } : null))
   const [open, setOpen] = useState({ key: '', thread: null, client: null, messages: [] })
   const [openVersion, setOpenVersion] = useState(0)
-  const [query, setQuery] = useState('')
-  const [results, setResults] = useState([])
   const [error, setError] = useState('')
   const key = selected ? selected.id || selected.clientId : ''
 
@@ -43,14 +43,6 @@ export default function InboxManager({ headingRef, target }) {
     return () => { active = false; clearInterval(timer) }
   }, [selected, key, openVersion])
 
-  useEffect(() => {
-    const wanted = query.trim().replace(/^@/, '')
-    if (wanted.length < 2) return
-    let active = true
-    const timer = setTimeout(() => callInbox('owner_search', { q: wanted }).then(data => { if (active) setResults(data.results) }).catch(() => {}), 250)
-    return () => { active = false; clearTimeout(timer) }
-  }, [query])
-
   const refresh = () => { setListVersion(value => value + 1); setOpenVersion(value => value + 1) }
   async function send(text) {
     await callInbox('owner_send', { clientId: open.client?.client_id || selected.clientId, body: text })
@@ -65,16 +57,13 @@ export default function InboxManager({ headingRef, target }) {
   const report = list.reports.find(item => item.id === selected?.id)
   const title = isReport ? (report?.people.join(' and ') || 'Reported conversation') : shown.client?.name || '…'
   const subtitle = isReport ? 'Reported conversation' : [shown.client?.username, shown.client?.email].filter(Boolean).join(' · ')
-  const searching = query.trim().replace(/^@/, '').length >= 2
 
   return <>
     <div className="admin-title-row"><div><span className="lbl">Skee Block · Messages</span><h1 className="serif" ref={headingRef} tabIndex={-1}>Inbox</h1><p>Write to any client by username, or press Message on their line in Clients. Clients see you as Skee. Conversations between clients stay private unless one of them reports it.</p></div></div>
     {error && <p className="admin-error" role="alert">{error}</p>}
     <div className="admin-inbox">
       <aside className="inbox-list" aria-label="Conversations">
-        <div className="inbox-search"><label>New message<input type="search" autoCapitalize="none" autoCorrect="off" spellCheck={false} value={query} placeholder="Search a username" onChange={event => setQuery(event.target.value)} /></label>
-          {searching && (results.length ? <ul>{results.map(item => <li key={item.client_id}><button type="button" onClick={() => { setQuery(''); setResults([]); setSelected({ clientId: item.client_id }) }}>{item.username}</button></li>)}</ul> : <p className="inbox-note">No client with this username.</p>)}
-        </div>
+        <UsernameSearch search={searchUsernames} onPick={item => setSelected({ clientId: item.client_id })} />
         {list.reports.length > 0 && <div className="inbox-reports"><span className="lbl">Reported · {list.reports.length}</span><ul className="inbox-threads">{list.reports.map(item => <li key={item.id}><button type="button" aria-current={selected?.id === item.id ? 'true' : undefined} data-unread="true" onClick={() => setSelected({ id: item.id })}><i aria-hidden="true">!</i><span><b>{item.people.join(' and ')}</b><small>By {item.reported_by}{item.reason ? `: ${item.reason}` : ''}</small></span></button></li>)}</ul></div>}
         {list.threads === null ? !error && <p className="inbox-note">Loading messages…</p> : list.threads.length ? <ul className="inbox-threads">{list.threads.map(item => <li key={item.id}><button type="button" aria-current={selected?.id === item.id ? 'true' : undefined} data-unread={item.unread} onClick={() => setSelected({ id: item.id })}><i aria-hidden="true">{item.name.charAt(0).toUpperCase()}</i><span><b>{item.name}</b><small>{item.last_mine ? 'You: ' : ''}{item.preview}</small></span><time dateTime={item.last_at}>{when(item.last_at)}</time>{item.unread && <em><span className="visually-hidden">Unread</span></em>}</button></li>)}</ul> : <p className="inbox-note">No messages yet.</p>}
       </aside>

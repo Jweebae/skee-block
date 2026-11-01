@@ -126,7 +126,7 @@ function ClientCard({ client, payments, today, onChanged }) {
   </div>
 }
 
-export default function ClientsManager({ headingRef, onMessage }) {
+export default function ClientsManager({ headingRef, onMessage, selfId }) {
   const book = useStudioBook()
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState('all')
@@ -163,7 +163,7 @@ export default function ClientsManager({ headingRef, onMessage }) {
             <span data-label="Spent" className="client-num">{formatPrice(client.spent)}</span>
             <span data-label="Debt" className={`client-num${client.owed ? ' client-owes' : ''}`}>{client.owed ? formatPrice(client.owed) : '—'}</span>
             <span data-label="Last visit">{shortDay(client.lastVisit)}</span>
-            <span className="client-message">{client.userId && !client.isOwner ? <button type="button" className="admin-outline" aria-label={`Message ${client.name}`} onClick={event => { event.preventDefault(); onMessage(client.userId) }}>Message</button> : !client.userId && <small>No account</small>}</span>
+            <span className="client-message">{client.userId && client.userId !== selfId ? <button type="button" className="admin-outline" aria-label={`Message ${client.name}`} onClick={event => { event.preventDefault(); onMessage(client.userId) }}>Message</button> : !client.userId && <small>No account</small>}</span>
           </summary>
           <ClientCard client={client} payments={data.payments} today={today} onChanged={changed} />
         </details>)}

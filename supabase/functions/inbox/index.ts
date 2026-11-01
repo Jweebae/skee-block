@@ -65,7 +65,9 @@ const fullName = (user?: User) => [user?.user_metadata?.first_name, user?.user_m
 
 // Usernames use lowercase letters, numbers, dots and underscores. In a search, an underscore must be taken literally.
 const cleanSearch = (value: unknown) => String(value ?? '').trim().toLowerCase().replace(/^@/, '').replace(/[^a-z0-9._]/g, '')
-const likePrefix = (text: string) => `${text.replace(/_/g, '\\_')}%`
+const likeAnywhere = (text: string) => `%${text.replace(/_/g, '\\_')}%`
+// Usernames that start with what was typed come first.
+const byRelevance = (wanted: string) => (a: any, b: any) => Number(b.username.startsWith(wanted)) - Number(a.username.startsWith(wanted)) || a.username.localeCompare(b.username)
 const cleanText = (value: unknown) => String(value ?? '').trim().slice(0, MAX_TEXT)
 
 // ---------- threads ----------
@@ -233,13 +235,17 @@ async function openThread(db: SupabaseClient, user: User, body: any) {
   }
 }
 
+// Suggestions from the first letter. An owner's username is listed too, and leads to the conversation with Skee, so a
+// client always reaches the studio in one place. `studio` names those results.
 async function searchClients(db: SupabaseClient, user: User, body: any) {
   const wanted = cleanSearch(body.q)
-  if (wanted.length < 3) return { results: [] }
-  const { data } = await db.from('client_profiles').select('user_id, username').ilike('username', likePrefix(wanted)).eq('allow_messages', true).order('username').limit(SEARCH_RESULTS + 10)
+  if (!wanted) return { results: [], studio: [], self: false }
+  const { data } = await db.from('client_profiles').select('user_id, username, allow_messages').ilike('username', likeAnywhere(wanted)).limit(50)
   const [owners, { data: blockedMe }] = await Promise.all([ownerIds(db), db.from('inbox_blocks').select('blocker').eq('blocked', user.id)])
   const hidden = new Set((blockedMe ?? []).map(row => row.blocker))
-  return { results: (data ?? []).filter(row => row.username && row.user_id !== user.id && !owners.has(row.user_id) && !hidden.has(row.user_id)).slice(0, SEARCH_RESULTS).map(row => row.username) }
+  const found = (data ?? []).filter(row => row.username && row.user_id !== user.id && !hidden.has(row.user_id) && (owners.has(row.user_id) || row.allow_messages !== false))
+    .sort(byRelevance(wanted)).slice(0, SEARCH_RESULTS)
+  return { results: found.map(row => row.username), studio: found.filter(row => owners.has(row.user_id)).map(row => row.username), self: (data ?? []).some(row => row.user_id === user.id && row.username === wanted) }
 }
 
 async function send(db: SupabaseClient, user: User, body: any) {
@@ -258,8 +264,11 @@ async function send(db: SupabaseClient, user: User, body: any) {
     if (!me?.username) fail(409, 'no_username')
     const { data: target } = await db.from('client_profiles').select('user_id').eq('username', cleanSearch(body.to)).maybeSingle()
     if (!target || target.user_id === user.id) fail(409, 'cannot_message')
-    await checkReachable(db, user.id, target!.user_id)
-    thread = await directThread(db, user, target!.user_id)
+    if ((await ownerIds(db)).has(target!.user_id)) thread = await studioThread(db, user.id, user.id)
+    else {
+      await checkReachable(db, user.id, target!.user_id)
+      thread = await directThread(db, user, target!.user_id)
+    }
   }
   const recipient = thread.kind === 'direct' ? otherOf(thread, user.id) : null
   if (recipient) await checkReachable(db, user.id, recipient)
@@ -353,20 +362,19 @@ async function ownerOpen(db: SupabaseClient, body: any) {
   }
 }
 
-async function ownerSearch(db: SupabaseClient, body: any) {
+async function ownerSearch(db: SupabaseClient, user: User, body: any) {
   const wanted = cleanSearch(body.q)
-  if (wanted.length < 2) return { results: [] }
-  const [{ data }, owners] = await Promise.all([
-    db.from('client_profiles').select('user_id, username').ilike('username', likePrefix(wanted)).order('username').limit(SEARCH_RESULTS + 10),
-    ownerIds(db),
-  ])
-  return { results: (data ?? []).filter(row => row.username && !owners.has(row.user_id)).slice(0, SEARCH_RESULTS).map(row => ({ client_id: row.user_id, username: row.username })) }
+  if (!wanted) return { results: [], self: false }
+  const { data } = await db.from('client_profiles').select('user_id, username').ilike('username', likeAnywhere(wanted)).limit(50)
+  const found = (data ?? []).filter(row => row.username && row.user_id !== user.id).sort(byRelevance(wanted)).slice(0, SEARCH_RESULTS)
+  return { results: found.map(row => ({ client_id: row.user_id, username: row.username })), self: (data ?? []).some(row => row.user_id === user.id && row.username === wanted) }
 }
 
 // An owner writes as the studio and can reach any client, including one who switched off messages from other clients.
 async function ownerSend(db: SupabaseClient, user: User, body: any) {
   const text = cleanText(body.body)
   if (!text) fail(400, 'empty_message')
+  if (body.clientId === user.id) fail(409, 'cannot_message')
   const client = await clientForOwner(db, body.clientId)
   const thread = await studioThread(db, client.client_id!, user.id)
   const alreadyWaiting = unreadFor(thread, client.client_id!)
@@ -386,7 +394,7 @@ const CLIENT_ACTIONS: Record<string, (db: SupabaseClient, user: User, body: any)
   threads: listThreads, unread: unreadCount, open: openThread, search: searchClients, send, block: setBlock, report, hide, settings,
 }
 const OWNER_ACTIONS: Record<string, (db: SupabaseClient, user: User, body: any) => Promise<unknown>> = {
-  owner_threads: db => ownerThreads(db), owner_unread: db => ownerUnread(db), owner_open: (db, _, body) => ownerOpen(db, body), owner_search: (db, _, body) => ownerSearch(db, body),
+  owner_threads: db => ownerThreads(db), owner_unread: db => ownerUnread(db), owner_open: (db, _, body) => ownerOpen(db, body), owner_search: ownerSearch,
   owner_send: ownerSend, owner_close_report: (db, _, body) => ownerCloseReport(db, body),
 }
 

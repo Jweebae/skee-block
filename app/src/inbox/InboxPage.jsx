@@ -3,6 +3,7 @@ import logo from '../assets/skee-logo-white.svg'
 import { announceInboxChange, callInbox } from '../lib/inboxApi'
 import { algiersParts, dayLabel } from '../lib/bookingsApi'
 import Conversation from './Conversation'
+import UsernameSearch from './UsernameSearch'
 import './Inbox.css'
 
 // The client's inbox. Other clients appear by username only: never their email, number or photo.
@@ -11,23 +12,9 @@ const THREAD_MS = 15000
 const shortWhen = value => (algiersParts(value).date === algiersParts(new Date()).date ? algiersParts(value).time : dayLabel(value, { day: 'numeric', month: 'short' }))
 const SKEE = { kind: 'studio', studio: true, name: 'Skee' }
 
-function Search({ onPick }) {
-  const [query, setQuery] = useState('')
-  const [results, setResults] = useState([])
-  const [searched, setSearched] = useState('')
-  useEffect(() => {
-    const wanted = query.trim().replace(/^@/, '')
-    if (wanted.length < 3) return
-    let active = true
-    const timer = setTimeout(() => callInbox('search', { q: wanted }).then(data => { if (active) { setResults(data.results); setSearched(wanted) } }).catch(() => {}), 300)
-    return () => { active = false; clearTimeout(timer) }
-  }, [query])
-  const wanted = query.trim().replace(/^@/, '')
-  const ready = wanted.length >= 3
-  return <div className="inbox-search">
-    <label>New message<input type="search" autoCapitalize="none" autoCorrect="off" spellCheck={false} maxLength={30} value={query} placeholder="Search a username" onChange={event => setQuery(event.target.value)} /></label>
-    {ready && searched === wanted && (results.length ? <ul>{results.map(name => <li key={name}><button type="button" onClick={() => { setQuery(''); onPick(name) }}>{name}</button></li>)}</ul> : <p className="inbox-note">No client with this username.</p>)}
-  </div>
+async function searchUsernames(q) {
+  const data = await callInbox('search', { q })
+  return { self: data.self, results: data.results.map(username => ({ username, studio: data.studio?.includes(username) })) }
 }
 
 function ThreadTools({ thread, onChanged, onDeleted }) {
@@ -88,9 +75,10 @@ export default function InboxPage({ client, onClose, onSignIn }) {
 
   const refresh = useCallback(() => { setListVersion(value => value + 1); setOpenVersion(value => value + 1) }, [])
   function choose(next) { setError(''); setSelected(next) }
-  function pickUsername(name) {
-    const existing = list.threads?.find(thread => thread.kind === 'direct' && thread.name === name)
-    choose(existing ? { id: existing.id } : { to: name })
+  function pickUsername({ username, studio }) {
+    if (studio) { choose({ studio: true }); return }
+    const existing = list.threads?.find(thread => thread.kind === 'direct' && thread.name === username)
+    choose(existing ? { id: existing.id } : { to: username })
   }
   async function send(text) {
     const data = await callInbox('send', selected.studio ? { studio: true, body: text } : selected.id ? { id: selected.id, body: text } : { to: selected.to, body: text })
@@ -119,7 +107,7 @@ export default function InboxPage({ client, onClose, onSignIn }) {
     {!client.ready ? <p className="inbox-note inbox-center">Checking your sign-in…</p> : !signedIn ? <section className="inbox-center"><h1 className="serif">Your <em>inbox</em>.</h1><p>Sign in to read and send messages.</p><button type="button" className="inbox-primary" onClick={onSignIn}>Sign in</button></section> : <main className="inbox-main" data-open={Boolean(selected)}>
       <aside className="inbox-list" aria-label="Conversations">
         <h1 className="serif">Inbox</h1>
-        <Search onPick={pickUsername} />
+        <UsernameSearch search={searchUsernames} onPick={pickUsername} />
         {error && !selected && <p className="inbox-error" role="alert">{error}</p>}
         <ul className="inbox-threads">
           {row(skeeThread || SKEE, { studio: true }, Boolean(selected?.studio))}
